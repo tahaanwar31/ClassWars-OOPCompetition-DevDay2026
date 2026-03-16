@@ -9,6 +9,16 @@
     "build": "nest build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "seed": "ts-node src/scripts/seed.ts",
+    "seed:all": "ts-node src/scripts/seed-all-levels.ts",
+    "seed:level-6": "ts-node src/scripts/seed-level-6.ts",
+    "seed:level-7": "ts-node src/scripts/seed-level-7.ts",
+    "seed:level-8": "ts-node src/scripts/seed-level-8-complete.ts",
+    "seed:level-9": "ts-node src/scripts/seed-level-9-complete.ts",
+    "seed:level-10": "ts-node src/scripts/seed-level-10-complete.ts",
+    "seed:6-10": "npm run seed:level-6 && npm run seed:level-7 && npm run seed:level-8 && npm run seed:level-9 && npm run seed:level-10",
+    "clear:6-10": "ts-node src/scripts/clear-levels-6-10.ts",
+    "verify:6-10": "ts-node src/scripts/verify-levels-6-10.ts",
+    "seed:6-10-fresh": "npm run clear:6-10 && npm run seed:6-10",
     "create-admin": "ts-node src/scripts/create-admin.ts"
   },
   "dependencies": {

@@ -11,7 +11,7 @@ export class Question {
   @Prop({ required: true })
   level: number;
 
-  @Prop({ required: true, enum: ['oneword', 'code', 'mcq'] })
+  @Prop({ required: true, enum: ['oneword', 'code', 'mcq', 'output', 'error', 'complete', 'design'] })
   type: string;
 
   @Prop({ required: true })
