@@ -58,16 +58,16 @@ int main() {
     // Level-specific tests
     if (level === 1) {
       // LEVEL 1: Checkpoint Navigation Tests
-      // Test scenario 1: Player at y=50, first checkpoint at y=20 (need to move UP to reach)
+      // Test scenario 1: Player at y=50, first checkpoint at y=20 (need to move DOWN to reach)
       cppWrapper += `
-    // LEVEL 1 TEST 1: At y=50, should move toward checkpoint at y=20 (UP)
+    // LEVEL 1 TEST 1: At y=50, should move toward checkpoint at y=20 (DOWN)
     t.y = 50.0;
     t.moveAction = "idle";
     t.move();
-    if (t.moveAction == "up") {
-      cout << "LEVEL1_CHECKPOINT_UP" << endl;
-    } else if (t.moveAction == "down") {
+    if (t.moveAction == "down") {
       cout << "LEVEL1_CHECKPOINT_DOWN" << endl;
+    } else if (t.moveAction == "up") {
+      cout << "LEVEL1_CHECKPOINT_UP" << endl;
     } else {
       cout << "LEVEL1_NO_MOVE" << endl;
     }
@@ -85,10 +85,10 @@ int main() {
     t.y = 25.0;
     t.moveAction = "idle";
     t.move();
-    if (t.moveAction == "up") {
-      cout << "LEVEL1_ADAPTIVE_UP" << endl;
-    } else if (t.moveAction == "down") {
+    if (t.moveAction == "down") {
       cout << "LEVEL1_ADAPTIVE_DOWN" << endl;
+    } else if (t.moveAction == "up") {
+      cout << "LEVEL1_ADAPTIVE_UP" << endl;
     }
 
     return 0;
