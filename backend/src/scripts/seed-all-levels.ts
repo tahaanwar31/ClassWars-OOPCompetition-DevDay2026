@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+﻿import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { AdminService } from '../admin/admin.service';
 
@@ -6,76 +6,81 @@ async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const adminService = app.get(AdminService);
 
-  console.log('🚀 Starting comprehensive database seeding...');
-  console.log('📚 Seeding 250 questions across 5 levels for Round 1');
+  console.log('Seeding Level 1 (50 riddle questions)...');
 
-  // LEVEL 1 - 50 Riddles (Basic OOP Concepts)
-  const level1Questions = [
-    { id: 1, level: 1, roundKey: 'round1', type: 'oneword', text: 'I keep my information locked away. Outsiders cannot touch it directly. But if you knock through the right doors, I may allow you to read or modify it.', correct: 'Encapsulation', isActive: true },
-    { id: 2, level: 1, roundKey: 'round1', type: 'oneword', text: 'A child may inherit traits from a parent. In programming I allow a new class to gain abilities from an existing one.', correct: 'Inheritance', isActive: true },
-    { id: 3, level: 1, roundKey: 'round1', type: 'oneword', text: 'You call my name the same way every time, but depending on the situation I might behave differently.', correct: 'Polymorphism', isActive: true },
-    { id: 4, level: 1, roundKey: 'round1', type: 'oneword', text: 'You rarely call me directly, yet I appear whenever a new object is created.', correct: 'Constructor', isActive: true },
-    { id: 5, level: 1, roundKey: 'round1', type: 'oneword', text: 'When an object\'s life comes to an end, I quietly clean up the resources it used.', correct: 'Destructor', isActive: true },
-    { id: 6, level: 1, roundKey: 'round1', type: 'oneword', text: 'Users see what I do, but they do not see how I do it.', correct: 'Abstraction', isActive: true },
-    { id: 7, level: 1, roundKey: 'round1', type: 'oneword', text: 'I describe what something should look like, but I cannot exist on my own. Only my children can bring my design to life.', correct: 'Abstract Class', isActive: true },
-    { id: 8, level: 1, roundKey: 'round1', type: 'oneword', text: 'I allow my children to use my resources, but outsiders cannot access them.', correct: 'Protected', isActive: true },
-    { id: 9, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am called automatically when you create a copy of an object.', correct: 'Copy Constructor', isActive: true },
-    { id: 10, level: 1, roundKey: 'round1', type: 'oneword', text: 'I hold data that belongs to the class itself, not to any single object.', correct: 'Static Member Variable', isActive: true },
-    { id: 11, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am a function that can access private parts of a class, even though I am not a member of that class.', correct: 'Friend Function', isActive: true },
-    { id: 12, level: 1, roundKey: 'round1', type: 'oneword', text: 'I let you use the same operator symbol for different types of data.', correct: 'Operator Overloading', isActive: true },
-    { id: 13, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am a class that contains at least one incomplete function, so you cannot create objects of me directly.', correct: 'Abstract Class', isActive: true },
-    { id: 14, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the pillar of OOP that hides implementation details from the user.', correct: 'Encapsulation', isActive: true },
-    { id: 15, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the pillar that allows one interface to be used for a general class of actions.', correct: 'Polymorphism', isActive: true },
-    { id: 16, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am a special function with the same name as the class, used to initialize objects.', correct: 'Constructor', isActive: true },
-    { id: 17, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am a special function with a tilde (~) before my name.', correct: 'Destructor', isActive: true },
-    { id: 18, level: 1, roundKey: 'round1', type: 'oneword', text: 'I allow a child class to access parent class members, but keep them hidden from the outside world.', correct: 'Protected', isActive: true },
-    { id: 19, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the keyword that makes a function wait until runtime to decide which version to call.', correct: 'Virtual', isActive: true },
-    { id: 20, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the type of function that has no body in the base class, and must be defined in derived classes.', correct: 'Pure Virtual Function', isActive: true },
-    { id: 21, level: 1, roundKey: 'round1', type: 'oneword', text: 'I let a class inherit properties from more than one parent.', correct: 'Multiple Inheritance', isActive: true },
-    { id: 22, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the relationship where class B is created from class A, and class C is created from class B.', correct: 'Multilevel Inheritance', isActive: true },
-    { id: 23, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am when multiple classes inherit from a single base class.', correct: 'Hierarchical Inheritance', isActive: true },
-    { id: 24, level: 1, roundKey: 'round1', type: 'oneword', text: 'I create a blueprint for objects.', correct: 'Class', isActive: true },
-    { id: 25, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am an instance of a class.', correct: 'Object', isActive: true },
-    { id: 26, level: 1, roundKey: 'round1', type: 'oneword', text: 'I control who can see and use the members of a class.', correct: 'Access Specifier', isActive: true },
-    { id: 27, level: 1, roundKey: 'round1', type: 'oneword', text: 'I make members visible to everyone, everywhere.', correct: 'Public', isActive: true },
-    { id: 28, level: 1, roundKey: 'round1', type: 'oneword', text: 'I make members visible only inside the class itself.', correct: 'Private', isActive: true },
-    { id: 29, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am a function that can be called without creating an object.', correct: 'Static Function', isActive: true },
-    { id: 30, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am data that is shared by all objects of a class.', correct: 'Static Data Member', isActive: true },
-    { id: 31, level: 1, roundKey: 'round1', type: 'oneword', text: 'I let you define what happens when you add two objects together.', correct: 'Operator Overloading', isActive: true },
-    { id: 32, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the process of creating a new object by copying an existing one.', correct: 'Copy Constructor', isActive: true },
-    { id: 33, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am a function that cannot modify the object it belongs to.', correct: 'Const Member Function', isActive: true },
-    { id: 34, level: 1, roundKey: 'round1', type: 'oneword', text: 'I point to the current object inside a member function.', correct: 'this pointer', isActive: true },
-    { id: 35, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the OOP concept that focuses on essential features while hiding unnecessary details.', correct: 'Abstraction', isActive: true },
-    { id: 36, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the ability of a child class to use methods from its parent class.', correct: 'Inheritance', isActive: true },
-    { id: 37, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am when a derived class provides its own version of a base class function.', correct: 'Function Overriding', isActive: true },
-    { id: 38, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am when you have multiple functions with the same name but different parameters.', correct: 'Function Overloading', isActive: true },
-    { id: 39, level: 1, roundKey: 'round1', type: 'oneword', text: 'I help avoid creating the wrong object by making my constructor accessible only to the class.', correct: 'Private Constructor', isActive: true },
-    { id: 40, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am called when you assign one object to another.', correct: 'Assignment Operator', isActive: true },
-    { id: 41, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am a collection of related classes and objects.', correct: 'Namespace', isActive: true },
-    { id: 42, level: 1, roundKey: 'round1', type: 'oneword', text: 'I ensure only one instance of a class exists in the entire program.', correct: 'Singleton Pattern', isActive: true },
-    { id: 43, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the concept where objects are treated as instances of their parent class.', correct: 'Polymorphism', isActive: true },
-    { id: 44, level: 1, roundKey: 'round1', type: 'oneword', text: 'I let derived classes access base class members while keeping them hidden from outside.', correct: 'Protected Access', isActive: true },
-    { id: 45, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am resolved at compile time, not at runtime.', correct: 'Static Binding', isActive: true },
-    { id: 46, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am resolved at runtime based on the object type.', correct: 'Dynamic Binding', isActive: true },
-    { id: 47, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am when you allocate memory for objects during program execution.', correct: 'Dynamic Memory Allocation', isActive: true },
-    { id: 48, level: 1, roundKey: 'round1', type: 'oneword', text: 'I give memory back to the system when objects are no longer needed.', correct: 'Destructor', isActive: true },
-    { id: 49, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the parent from which other classes are derived.', correct: 'Base Class', isActive: true },
-    { id: 50, level: 1, roundKey: 'round1', type: 'oneword', text: 'I am the child that inherits from another class.', correct: 'Derived Class', isActive: true },
-  ];
+  const questions = [];
+  let id = 101;
+  const add = (type: string, text: string, answer: string, opts?: string[]) => {
+    questions.push({ id: id++, level: 1, roundKey: 'round1', type, text, correct: answer, options: opts || null, isActive: true });
+  };
 
-  console.log('📝 Seeding Level 1 questions...');
-  await adminService.seedQuestions(level1Questions);
-  console.log('✅ Level 1 complete (50 questions)');
+  // ═══════════════════════════════════════════
+  // LEVEL 1 — OOP Riddles (MCQ + oneword mix)
+  // Fun, accessible, themed as army briefings
+  // ═══════════════════════════════════════════
 
+  add('mcq', 'I am the blueprint. Builders read me to construct soldiers. I describe their weapons, rank, and skills — but I am not a soldier myself. What am I in OOP?', 'C) Class', ['A) Object', 'B) Function', 'C) Class', 'D) Interface']);
+  add('mcq', 'I am a real soldier, created from the blueprint. I have my own armor and my own name. What am I?', 'B) Object', ['A) Class', 'B) Object', 'C) Method', 'D) Variable']);
+  add('mcq', 'I hide the radio frequency of the base. Only the general can call in. I keep secrets from outsiders. What OOP concept am I?', 'A) Encapsulation', ['A) Encapsulation', 'B) Inheritance', 'C) Polymorphism', 'D) Overriding']);
+  add('mcq', 'Junior soldiers inherit the skills of their senior. A Sniper IS-A Soldier and gets everything automatically. What concept is this?', 'C) Inheritance', ['A) Encapsulation', 'B) Abstraction', 'C) Inheritance', 'D) Composition']);
+  add('mcq', 'The command "Fire!" means different things to a sniper, a rocket trooper, and an artillery unit. Same command, different result. What OOP concept is this?', 'B) Polymorphism', ['A) Inheritance', 'B) Polymorphism', 'C) Encapsulation', 'D) Overloading']);
+  add('mcq', 'The mission brief says "Deploy a unit" but does not say how. Each team implements it their own way. The interface only lists the mission — no details. What concept?', 'D) Abstraction', ['A) Encapsulation', 'B) Polymorphism', 'C) Inheritance', 'D) Abstraction']);
+  add('mcq', 'I am called the moment a soldier is created. I assign gear, rank, and a name right at birth. What am I?', 'A) Constructor', ['A) Constructor', 'B) Destructor', 'C) Method', 'D) Initializer']);
+  add('mcq', 'I run when the soldier is dismissed. I clean up the gear locker, return equipment, free up memory. My name begins with ~. What am I?', 'B) Destructor', ['A) Constructor', 'B) Destructor', 'C) Finalizer', 'D) Deleter']);
+  add('mcq', 'I let outsiders access a soldiers rank without changing it directly. I am a member function that only returns a value. What type of function am I?', 'C) Getter', ['A) Setter', 'B) Modifier', 'C) Getter', 'D) Friend']);
+  add('mcq', 'I let a commander update a soldiers rank from outside the class. What type of function am I?', 'A) Setter', ['A) Setter', 'B) Getter', 'C) Constructor', 'D) Override']);
+
+  add('oneword', 'A variable or function that belongs to the class itself, not to any specific object, is called a ______ member. (one word)', 'static');
+  add('oneword', 'The keyword in C++ that prevents a variable from being changed after it is initialized is ______. (one word)', 'const');
+  add('oneword', 'The access specifier that allows only the class itself and its derived classes to use a member is ______. (one word)', 'protected');
+  add('mcq', 'Which access specifier in C++ makes a member accessible from ANYWHERE in the program?', 'B) public', ['A) private', 'B) public', 'C) protected', 'D) friend']);
+  add('mcq', 'Which access specifier is the DEFAULT for class members in C++?', 'A) private', ['A) private', 'B) public', 'C) protected', 'D) static']);
+
+  add('mcq', 'I am a function defined inside a class. I describe an action the object can perform — like aim(), fire(), or retreat(). What am I?', 'C) Member function', ['A) Global function', 'B) Free function', 'C) Member function', 'D) Static function']);
+  add('oneword', 'The mechanism by which a derived class inherits from more than one base class is called ______ inheritance. (one word)', 'multiple');
+  add('mcq', 'The "IS-A" relationship maps to which OOP concept?', 'A) Inheritance', ['A) Inheritance', 'B) Composition', 'C) Aggregation', 'D) Association']);
+  add('mcq', 'The "HAS-A" relationship, where a class contains an object of another class, maps to which concept?', 'B) Composition', ['A) Inheritance', 'B) Composition', 'C) Polymorphism', 'D) Abstraction']);
+  add('oneword', 'The keyword used in C++ to create a new object on the heap is ______. (one word)', 'new');
+
+  add('mcq', 'What is a CLASS in C++ most accurately described as?', 'D) A user-defined data type with data and functions', ['A) A built-in type like int or float', 'B) A module containing only functions', 'C) A variable that stores values', 'D) A user-defined data type with data and functions']);
+  add('mcq', 'Which feature of OOP helps reduce code duplication by letting you reuse a parent class implementation?', 'B) Inheritance', ['A) Encapsulation', 'B) Inheritance', 'C) Overloading', 'D) Abstraction']);
+  add('oneword', 'An object is a specific ______ of a class. (one word)', 'instance');
+  add('mcq', 'How do you define a member function OUTSIDE the class definition in C++?', 'C) ClassName::functionName()', ['A) functionName::ClassName()', 'B) ClassName.functionName()', 'C) ClassName::functionName()', 'D) functionName(ClassName)']);
+  add('oneword', 'The implicit parameter passed to every non-static member function referring to the calling object is called ______. (one word)', 'this');
+
+  add('mcq', 'Which of the following BEST describes polymorphism?', 'A) The same function behaving differently based on the object calling it', ['A) The same function behaving differently based on the object calling it', 'B) A child class copying its parent', 'C) A class hiding its data members', 'D) A function with no return type']);
+  add('mcq', 'A class Dog inherits from Animal. Dog has method speak() that overrides Animal speak(). When we call animal->speak() where animal points to a Dog, which speak() runs?', 'B) Dog speak() — if speak() is virtual', ['A) Animal speak() always', 'B) Dog speak() — if speak() is virtual', 'C) Both run together', 'D) Compiler error']);
+  add('oneword', 'The C++ keyword placed before a base class member function to allow runtime polymorphism is ______. (one word)', 'virtual');
+  add('mcq', 'Which of the following is NOT a pillar of OOP?', 'D) Compilation', ['A) Inheritance', 'B) Encapsulation', 'C) Polymorphism', 'D) Compilation']);
+  add('mcq', 'What happens if you do NOT define a constructor in a C++ class?', 'A) A default constructor is automatically provided by the compiler', ['A) A default constructor is automatically provided by the compiler', 'B) The class cannot be instantiated', 'C) A compile error occurs', 'D) The object is initialized to null']);
+
+  add('mcq', 'I am the soldier\'s rank field — nobody outside the platoon can see or change me. What access specifier am I?', 'C) private', ['A) public', 'B) protected', 'C) private', 'D) const']);
+  add('oneword', 'A constructor that takes no arguments is called a ______ constructor. (one word)', 'default');
+  add('oneword', 'A constructor that takes arguments to initialize an object is called a ______ constructor. (one word)', 'parameterized');
+  add('mcq', 'An object created with "new" is stored in which area of memory?', 'B) Heap', ['A) Stack', 'B) Heap', 'C) Code segment', 'D) Register']);
+  add('mcq', 'An object declared as a local variable inside a function is stored where?', 'A) Stack', ['A) Stack', 'B) Heap', 'C) Global memory', 'D) Register']);
+
+  add('oneword', 'When a derived class provides its own version of a virtual base class function, that is called function ______. (one word)', 'overriding');
+  add('mcq', 'Function OVERLOADING and function OVERRIDING are different. Which one involves the SAME class defining the same function name with different parameters?', 'A) Overloading', ['A) Overloading', 'B) Overriding', 'C) Both the same', 'D) Neither']);
+  add('mcq', 'I am a member function that shares the name of my class and has no return type. When I am called with parameters, I set up the object. What am I?', 'B) Parameterized constructor', ['A) Default constructor', 'B) Parameterized constructor', 'C) Copy constructor', 'D) Destructor']);
+  add('mcq', 'Which function is called when one object is created from another existing object using: Soldier s2 = s1?', 'C) Copy constructor', ['A) Default constructor', 'B) Assignment operator', 'C) Copy constructor', 'D) Overloaded constructor']);
+  add('oneword', 'The operator used in C++ to access a member of an object through a pointer is ______. (one word)', '->');
+
+  add('mcq', 'What does "data hiding" mean in OOP?', 'B) Restricting access to the internal state of an object', ['A) Deleting data from memory', 'B) Restricting access to the internal state of an object', 'C) Making data constants', 'D) Hiding data in a file']);
+  add('oneword', 'The concept that allows you to interact with an object without knowing how it works internally is called ______. (one word)', 'abstraction');
+  add('mcq', 'A class defined within another class is called a _____ class.', 'C) Nested', ['A) Inner C++ class', 'B) Friend class', 'C) Nested class', 'D) Child class']);
+  add('mcq', 'Which statement creates a Dog object called rex from the Dog class?', 'A) Dog rex;', ['A) Dog rex;', 'B) rex = new Dog;', 'C) Create Dog rex;', 'D) object Dog rex;']);
+  add('oneword', 'A C++ class member function that does NOT modify the object state should be declared with the ______ keyword. (one word)', 'const');
+
+  add('mcq', 'Which of the following is TRUE about destructors in C++?', 'D) A class can have only one destructor', ['A) A class can have multiple destructors', 'B) A destructor can take parameters', 'C) A destructor can return a value', 'D) A class can have only one destructor']);
+  add('mcq', 'If class B inherits from class A, B is called the ______ class.', 'B) Derived', ['A) Base', 'B) Derived', 'C) Abstract', 'D) Concrete']);
+  add('oneword', 'The class that is inherited FROM is called the ______ class. (one word)', 'base');
+  add('mcq', 'What is the output of this simple code?\n\nclass Warrior {\npublic:\n    Warrior() { cout << "Ready!"; }\n};\nint main() { Warrior w; }', 'A) Ready!', ['A) Ready!', 'B) Nothing', 'C) Warrior', 'D) Compiler error']);
+  add('mcq', 'Which keyword is used in C++ to specify that a class inherits from another class?', 'C) : public', ['A) extends', 'B) inherits', 'C) : public', 'D) -> parent']);
+
+  await adminService.seedQuestionsForLevel(1, questions);
+  console.log('Level 1 seeded with 50 riddle questions!');
   await app.close();
-  console.log('🎉 Database seeding completed successfully!');
-  console.log('📊 Total questions seeded: 50');
 }
 
-bootstrap().catch(err => {
-  console.error('❌ Seeding failed:', err);
-  process.exit(1);
-});
-
-  // Note: Due to file size limits, this is Level 1 only.
-  // Run this script first, then run seed-levels-2-5.ts for remaining questions.
+bootstrap().catch(console.error);
