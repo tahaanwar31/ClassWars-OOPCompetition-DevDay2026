@@ -5,10 +5,10 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Round1 from './components/Round1';
+import Round1 from './rounds/round1/Round1';
+import Round2 from './rounds/round2/Round2';
 import TeamLogin from './pages/TeamLogin';
 import CompetitionLobby from './pages/CompetitionLobby';
-import Round2ComingSoon from './pages/Round2ComingSoon';
 import Login from './pages/admin/Login';
 import Dashboard from './pages/admin/Dashboard';
 import Questions from './pages/admin/Questions';
@@ -64,7 +64,7 @@ export default function App() {
           {/* Competition Routes */}
           <Route path="/competition" element={<CompetitionLobby />} />
           <Route path="/competition/round1" element={<Round1 />} />
-          <Route path="/competition/round2" element={<Round2ComingSoon />} />
+          <Route path="/competition/round2" element={<Round2 />} />
           
           {/* Legacy Game Route - redirect to competition lobby */}
           <Route path="/game" element={<Navigate to="/competition" replace />} />

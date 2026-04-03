@@ -9,7 +9,7 @@ export default function Questions() {
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [formData, setFormData] = useState({
     level: 1,
-    type: 'oneword',
+    type: 'mcq',
     text: '',
     code: '',
     options: ['', '', '', ''],
@@ -29,7 +29,7 @@ export default function Questions() {
     if (editingQuestion) {
       setFormData({
         level: editingQuestion.level || 1,
-        type: editingQuestion.type || 'oneword',
+        type: editingQuestion.type || 'mcq',
         text: editingQuestion.text || '',
         code: editingQuestion.code || '',
         options: editingQuestion.options || ['', '', '', ''],
@@ -38,7 +38,7 @@ export default function Questions() {
     } else {
       setFormData({
         level: 1,
-        type: 'oneword',
+        type: 'mcq',
         text: '',
         code: '',
         options: ['', '', '', ''],

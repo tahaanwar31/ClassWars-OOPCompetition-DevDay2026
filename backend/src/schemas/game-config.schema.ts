@@ -72,9 +72,9 @@ export class GameConfig {
         maxConsecutiveWrong: 2,
         rules: [
           'Answer [Current Level] questions correctly to level up',
-          '2 consecutive wrong answers drops you 1 level',
-          'Missing a question yields 0 points (No strike)',
-          '+5 Intel Points per correct answer'
+          '2 consecutive wrong answers or 2 consecutive missed questions drops you 1 level',
+          'Missing a question counts as a strike (treated like an incorrect answer)',
+          'Winners are decided by highest level reached; ties are broken by who reached that level first'
         ],
         leaderboardEnabled: true
       },

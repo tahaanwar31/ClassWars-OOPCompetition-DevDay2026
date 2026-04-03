@@ -45,6 +45,20 @@ export class AdminService {
     return { message: 'Questions seeded successfully', count: result.length };
   }
 
+  async seedQuestionsForLevel(level: number, questions: Partial<Question>[]): Promise<{ message: string; count: number }> {
+    // Deduplicate by question text before inserting
+    const seen = new Set<string>();
+    const unique = questions.filter(q => {
+      const key = (q.text || '').replace(/\s+/g, ' ').trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    await this.questionModel.deleteMany({ level });
+    const result = await this.questionModel.insertMany(unique);
+    return { message: `Level ${level} questions seeded successfully`, count: result.length };
+  }
+
   // Game Config Management
   async getConfig(): Promise<GameConfig> {
     let config = await this.gameConfigModel.findOne({ configName: 'default' }).exec();

@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+﻿import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { AdminService } from '../admin/admin.service';
 
@@ -6,936 +6,288 @@ async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const adminService = app.get(AdminService);
 
-  console.log('🚀 Seeding Level 10 - OPERATION 141 (50 questions)...\n');
-
-  const questions = [];
+  const questions: any[] = [];
   const level = 10;
-  let questionId = 1001; // Starting from 1001 for Level 10
+  let questionId = 1001;
 
   const add = (type: string, text: string, answer: string, opts?: string[]) => {
-    questions.push({ 
-      id: questionId++,
-      level, 
-      roundKey: 'round1', 
-      type, 
-      text, 
-      correct: answer, 
-      options: opts || null, 
-      isActive: true 
-    });
+    questions.push({ id: questionId++, level, roundKey: 'round1', type, text, correct: answer, options: opts || null, isActive: true });
   };
 
-  // Level 10 - All 50 Questions (Operation 141 Theme)
-  
-  add('complete', `OPERATION 141 SCENARIO:
-class Operative {
-    protected:
-        char *callsign;
-    public:
-        Operative(const char *c) {
-            callsign = new char[strlen(c) + 1];
-            strcpy(callsign, c);
-        }
-        virtual ~Operative() { delete[] callsign; }
-};
-class Sniper : public Operative {
-    int *ammo;
-    public:
-        Sniper(const char *c, int a) : ________(________), ammo(new int(a)) {}
-        ~Sniper() { delete ammo; }
-};
-Complete the Sniper constructor initialization.`, 'Operative(c)');
+  // LEVEL 10 — ULTIMATE: Expert everything
+  // Tricky output traces, subtle UB, template metaprogramming, complex inheritance,
+  // design patterns, move semantics edge cases, and nasty error questions
 
-  add('output', `class Operative {
-    char *callsign;
-    public:
-        Operative(const char *c) {
-            callsign = new char[strlen(c) + 1];
-            strcpy(callsign, c);
-        }
-        ~Operative() { delete[] callsign; cout << "~O"; }
-        void show() { cout << callsign; }
-};
-class Captain : public Operative {
-    int *squadSize;
-    public:
-        Captain(const char *c, int s) : Operative(c), squadSize(new int(s)) {}
-        ~Captain() { delete squadSize; cout << "~C"; }
-};
-int main() {
-    Operative *o = new Captain("Price", 4);
-    o->show();
-    delete o;
-    return 0;
-}
-What is the output?`, 'Price~O');
+  add('oneword', 'What is the output?\n\nstruct B {\n  int x;\n  B(int v) : x(v) {}\n  virtual int get() { return x; }\n};\nstruct D : B {\n  int x;\n  D(int v) : B(v*2), x(v) {}\n  int get() { return x; }\n};\nint main() {\n  B* p = new D(3);\n  cout << p->get() << p->x;\n}', '36');
+  add('oneword', 'What is the output?\n\nstruct Vec {\n  int x, y, z;\n  Vec(int a, int b, int c) : x(a), y(b), z(c) {}\n  Vec operator+(const Vec& v) const { return Vec(x+v.x, y+v.y, z+v.z); }\n  int mag() const { return x + y + z; }\n};\nint main() {\n  Vec a(1,2,3), b(4,5,6);\n  Vec c = a + b;\n  cout << c.mag();\n}', '21');
+  add('oneword', 'What is the output?\n\nclass Thing {\n  static int n;\npublic:\n  Thing() { n++; cout << "+" << n; }\n  Thing(const Thing&) { n++; cout << "c" << n; }\n  ~Thing() { cout << "-" << n; n--; }\n};\nint Thing::n = 0;\nint main() {\n  Thing a;\n  Thing b = a;\n}', '+1c2-2-1');
+  add('oneword', 'What is the output?\n\nstruct Observer {\n  virtual void update(int v) = 0;\n  virtual ~Observer() {}\n};\nstruct Logger : Observer {\n  int sum;\n  Logger() : sum(0) {}\n  void update(int v) { sum += v; }\n};\nstruct Source {\n  Observer* subs[10];\n  int count;\n  Source() : count(0) {}\n  void subscribe(Observer* o) { subs[count++] = o; }\n  void emit(int v) { for(int i=0;i<count;i++) subs[i]->update(v); }\n};\nint main() {\n  Source s;\n  Logger l;\n  s.subscribe(&l);\n  s.emit(3); s.emit(7); s.emit(10);\n  cout << l.sum;\n}', '20');
+  add('oneword', 'What is the output?\n\nstruct Mixin {\n  string tag() { return static_cast<Der*>(this)->name(); }\n};\nstruct Der : Mixin {\n  string name() { return "Der"; }\n};\nint main() {\n  Der d;\n  cout << d.tag();\n}', 'error');
+  add('oneword', 'What is the output?\n\ntypedef int (*Op)(int, int);\nstruct Calc {\n  Op fn;\n  Calc(Op f) : fn(f) {}\n  int run(int a, int b) { return fn(a, b); }\n};\nint add(int a, int b) { return a + b; }\nint mul(int a, int b) { return a * b; }\nint main() {\n  Calc c(add);\n  cout << c.run(3, 4);\n  c.fn = mul;\n  cout << c.run(3, 4);\n}', '712');
+  add('oneword', 'What is the output?\n\nstruct Fib {\n  int a = 0, b = 1;\n  int next() {\n    int t = a;\n    a = b;\n    b = t + b;\n    return t;\n  }\n};\nint main() {\n  Fib f;\n  for(int i=0;i<6;i++) cout << f.next();\n}', '011235');
+  add('oneword', 'What is the output?\n\nstruct A {\n  virtual void f() { cout << "Af"; }\n};\nstruct B : virtual A {\n  void f() { cout << "Bf"; }\n};\nstruct C : virtual A {\n  void f() { cout << "Cf"; }\n};\nstruct D : B, C {\n};\nint main() {\n  D d;\n  d.f();\n}', 'error');
+  add('oneword', 'What is the output?\n\nstruct Tag {};\nstruct A : Tag {\n  virtual void show() { cout << "A"; }\n};\nstruct B : Tag {\n  void show() { cout << "B"; }\n};\nstruct C : A, B {\n  void show() { A::show(); B::show(); }\n};\nint main() {\n  C c;\n  c.show();\n  static_cast<A*>(&c)->show();\n}', 'ABAB');
+  add('oneword', 'What is the output?\n\nstruct Holder {\n  const int v;\n  Holder(int x) : v(x) {}\n  Holder& operator=(const Holder&) = delete;\n};\nint main() {\n  Holder h(5);\n  cout << h.v;\n}', '5');
 
-  add('error', `OPERATION 141:
-class Mission {
-    int *objectives;
-    int count;
-    public:
-        Mission(int c) : count(c) {
-            objectives = new int[count];
-        }
-        Mission(const Mission &m) {
-            count = m.count;
-            objectives = m.objectives;
-        }
-        ~Mission() { delete[] objectives; }
-};
-int main() {
-    Mission m1(5);
-    Mission m2 = m1;
-    return 0;
-}
-What is the error?`, 'Shallow copy - double deletion of objectives');
+  add('oneword', 'What is the output?\n\nstruct Item {\n  int val;\n  Item(int v = 0) : val(v) {}\n  bool operator<(const Item& o) const { return val < o.val; }\n};\nvoid sort3(Item arr[]) {\n  for(int i=0;i<2;i++)\n    for(int j=0;j<2-i;j++)\n      if(arr[j+1] < arr[j]) { Item t=arr[j]; arr[j]=arr[j+1]; arr[j+1]=t; }\n}\nint main() {\n  Item arr[] = {Item(3), Item(1), Item(2)};\n  sort3(arr);\n  for(int i=0;i<3;i++) cout << arr[i].val;\n}', '123');
+  add('oneword', 'What is the output?\n\nclass Val {\n  int v;\npublic:\n  Val(int x) : v(x) {}\n  operator int() const { return v; }\n  operator double() const { return v + 0.5; }\n};\nint main() {\n  Val a(10);\n  int x = a;\n  double y = a;\n  cout << y;\n}', '10.5');
+  add('oneword', 'What is the output?\n\nclass Acc {\n  int val;\npublic:\n  Acc(int v) : val(v) {}\n  Acc& add(int n) { val += n; return *this; }\n  Acc& mul(int n) { val *= n; return *this; }\n  int get() const { return val; }\n};\nint main() {\n  Acc a(2);\n  cout << a.add(3).mul(2).add(1).get();\n}', '11');
+  add('oneword', 'What is the output?\n\nstruct Base {\n  virtual Base* clone() {\n    return new Base(*this);\n  }\n  virtual void id() { cout << "B"; }\n};\nstruct Der : Base {\n  Der* clone() {\n    return new Der(*this);\n  }\n  void id() { cout << "D"; }\n};\nint main() {\n  Base* p = new Der();\n  Base* q = p->clone();\n  q->id();\n}', 'D');
+  add('oneword', 'What is the output?\n\nclass Holder {\n  int* p;\npublic:\n  Holder(int v) : p(new int(v)) {}\n  Holder(const Holder& o) : p(new int(*o.p)) {}\n  ~Holder() { delete p; }\n  void set(int v) { *p = v; }\n  int get() const { return *p; }\n};\nint main() {\n  Holder a(42);\n  {\n    Holder b = a;\n    b.set(99);\n  }\n  cout << a.get();\n}', '42');
 
-  add('complete', `NATO vs RUSSIA SCENARIO:
-class ThreatResponse {
-    public:
-        virtual void deploy() = 0;
-        void execute() {
-            brief();
-            deploy();
-            report();
-        }
-    ________ :
-        void brief() { cout << "Brief"; }
-        void report() { cout << "Report"; }
-};
-What access specifier prevents derived classes from overriding brief() and report()?`, 'private');
+  add('oneword', 'What is the output?\n\nstruct Immutable {\n  const int val;\n  Immutable(int v) : val(v) {}\n  Immutable withPlus(int n) const { return Immutable(val + n); }\n};\nint main() {\n  Immutable a(1);\n  auto b = a.withPlus(2).withPlus(3).withPlus(4);\n  cout << b.val;\n}', '10');
+  add('oneword', 'What is the output?\n\nclass Shape {\npublic:\n  virtual const char* type() = 0;\n  virtual ~Shape() {}\n};\nclass Circle : public Shape {\npublic:\n  const char* type() { return "circle"; }\n};\nclass Square : public Shape {\npublic:\n  const char* type() { return "square"; }\n};\nint main() {\n  Shape* arr[2];\n  arr[0] = new Circle();\n  arr[1] = new Square();\n  for(int i=0;i<2;i++) cout << arr[i]->type();\n}', 'circlesquare');
+  add('oneword', 'What is the output?\n\nstruct Res {\n  string name;\n  Res(string n) : name(n) { cout << "open:" << n; }\n  ~Res() { cout << "close:" << name; }\n};\nstruct User {\n  Res a;\n  Res b;\n  User() : a("A"), b("B") { cout << "user"; }\n  ~User() { cout << "~user"; }\n};\nint main() {\n  User u;\n}', 'open:Aopen:Buser~userclose:Bclose:A');
+  add('oneword', 'What is the output?\n\nclass Base {\npublic:\n  virtual int f() const { return 1; }\n  virtual int g() { return 2; }\n};\nclass Der : public Base {\npublic:\n  int f() const { return 10; }\n  int g() { return 20; }\n};\nvoid foo(const Base& b) {\n  cout << b.f();\n}\nint main() {\n  Der d;\n  foo(d);\n  Base* p = &d;\n  cout << p->g();\n}', '1020');
+  add('oneword', 'What is the output?\n\nclass Stack {\n  int data[100];\n  int top;\npublic:\n  Stack() : top(0) {}\n  Stack& push(int v) { data[top++] = v; return *this; }\n  int sum() {\n    int s = 0;\n    for(int i=0;i<top;i++) s += data[i];\n    return s;\n  }\n};\nint main() {\n  Stack s;\n  cout << s.push(1).push(2).push(3).sum();\n}', '6');
+  add('oneword', 'What is the output?\n\nstruct Outer {\n  struct Inner {\n    int v = 77;\n    void show() { cout << v; }\n  };\n  Inner in;\n  void run() { in.show(); }\n};\nint main() {\n  Outer o;\n  o.run();\n  Outer::Inner i;\n  i.show();\n}', '7777');
 
-  add('mcq', `class Mission {
-    public:
-        virtual void execute() = 0;
-        void launch() { brief(); execute(); report(); }
-        virtual void brief() { cout << "Brief"; }
-        virtual void report() { cout << "Report"; }
-};
-class StealthMission : public Mission {
-    public:
-        void execute() { cout << "Stealth"; }
-};
-What happens with: Mission *m = new StealthMission(); m->launch();`, 
-    'BriefStealthReport', 
-    ['Runtime error', 'BriefStealthReport', 'Only "Stealth"', 'Compilation error']);
+  add('oneword', 'What is the output?\n\nstruct TreeNode {\n  int val;\n  TreeNode* left;\n  TreeNode* right;\n  TreeNode(int v) : val(v), left(nullptr), right(nullptr) {}\n  ~TreeNode() { delete left; delete right; }\n};\nint height(TreeNode* n) {\n  if(!n) return 0;\n  int l = height(n->left);\n  int r = height(n->right);\n  return 1 + (l > r ? l : r);\n}\nint main() {\n  TreeNode* root = new TreeNode(1);\n  root->left = new TreeNode(2);\n  root->left->left = new TreeNode(3);\n  root->right = new TreeNode(4);\n  cout << height(root);\n  delete root;\n}', '3');
+  add('oneword', 'What is the output?\n\nclass Scope {\n  const char* name;\npublic:\n  Scope(const char* n) : name(n) { cout << name; }\n  ~Scope() { cout << name; }\n};\nint main() {\n  cout << "A";\n  {\n    Scope d("D");\n    cout << "B";\n  }\n  cout << "C";\n}', 'ADBDC');
+  add('oneword', 'What is the output?\n\nclass Pool {\n  static int ids[10];\n  static int top;\npublic:\n  int id;\n  Pool() {\n    if(top <= 0) { id = -1; return; }\n    id = ids[--top];\n  }\n  ~Pool() { ids[top++] = id; }\n};\nint Pool::ids[10] = {1, 2, 3};\nint Pool::top = 3;\nint main() {\n  Pool a;\n  cout << a.id;\n  { Pool b; cout << b.id; }\n  Pool c;\n  cout << c.id;\n}', '322');
+  add('oneword', 'What is the output?\n\nclass Tr {\n  const char* name;\npublic:\n  Tr(const char* n) : name(n) { cout << "+" << name; }\n  Tr(const Tr& o) : name(o.name) { cout << "C" << name; }\n  Tr& operator=(const Tr& o) { name = o.name; cout << "=" << name; return *this; }\n  ~Tr() { cout << "-" << name; }\n};\nint main() {\n  Tr a("x");\n  Tr b("y");\n  b = a;\n  cout << "|";\n}', '+x+y=x|-x-x');
+  add('oneword', 'What is the output?\n\nstruct Math {\n  static int sum(int n) { return n <= 0 ? 0 : n + sum(n-1); }\n  static int fact(int n) { return n <= 1 ? 1 : n * fact(n-1); }\n};\nint main() {\n  cout << Math::sum(5) << Math::fact(4);\n}', '1524');
 
-  add('output', `class Squad {
-    static int totalSquads;
-    int id;
-    public:
-        Squad() : id(++totalSquads) { cout << id; }
-        Squad(const Squad &s) : id(++totalSquads) { cout << id; }
-        ~Squad() { cout << id; --totalSquads; }
-};
-int Squad::totalSquads = 0;
-int main() {
-    Squad s1;
-    {
-        Squad s2 = s1;
-        {
-            Squad s3 = s2;
-        }
-    }
-    return 0;
-}
-What is the output?`, '12332211');
+  add('oneword', 'What is the output?\n\nclass Val {\n  int v;\npublic:\n  Val(int x) : v(x) {}\n  Val& operator=(const Val& o) {\n    cout << "=" << o.v;\n    v = o.v;\n    return *this;\n  }\n  void show() { cout << v; }\n};\nint main() {\n  Val a(1), b(2), c(3);\n  a = b = c;\n  a.show();\n}', '=3=33');
+  add('oneword', 'What is the output?\n\nstruct A {\n  int v;\n  explicit A(int x) : v(x) {}\n  A operator+(const A& o) const { return A(v + o.v); }\n};\nint main() {\n  A a(3);\n  A b = a + A(4);  // OK — explicit is fine with direct construction\n  cout << b.v;\n}', '7');
+  add('oneword', 'What is the output?\n\nstruct Visitor {\n  virtual void visit(struct Lit&) = 0;\n  virtual void visit(struct Add&) = 0;\n  virtual ~Visitor() {}\n};\nstruct Expr { virtual void accept(Visitor& v) = 0; virtual ~Expr(){} };\nstruct Lit : Expr {\n  int v;\n  Lit(int x) : v(x) {}\n  void accept(Visitor& vi) { vi.visit(*this); }\n};\nstruct Add : Expr {\n  Expr *l, *r;\n  Add(Expr* a, Expr* b) : l(a), r(b) {}\n  void accept(Visitor& vi) { vi.visit(*this); }\n};\nstruct Eval : Visitor {\n  int result = 0;\n  void visit(Lit& n) { result = n.v; }\n  void visit(Add& n) {\n    Eval el, er;\n    n.l->accept(el);\n    n.r->accept(er);\n    result = el.result + er.result;\n  }\n};\nint main() {\n  Add expr(new Lit(3), new Lit(4));\n  Eval e;\n  expr.accept(e);\n  cout << e.result;\n}', '7');
+  add('oneword', 'What is the output?\n\nclass Expr {\npublic:\n  virtual int eval() = 0;\n  virtual ~Expr() {}\n};\nclass Num : public Expr {\n  int v;\npublic:\n  Num(int x) : v(x) {}\n  int eval() { return v; }\n};\nclass Add : public Expr {\n  Expr *l, *r;\npublic:\n  Add(Expr* a, Expr* b) : l(a), r(b) {}\n  int eval() { return l->eval() + r->eval(); }\n  ~Add() { delete l; delete r; }\n};\nclass Mul : public Expr {\n  Expr *l, *r;\npublic:\n  Mul(Expr* a, Expr* b) : l(a), r(b) {}\n  int eval() { return l->eval() * r->eval(); }\n  ~Mul() { delete l; delete r; }\n};\nint main() {\n  Expr* e = new Mul(new Add(new Num(2), new Num(3)), new Num(4));\n  cout << e->eval();\n  delete e;\n}', '20');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  void f(int x) { cout << "A" << x; }\n};\nclass B : public A {\npublic:\n  void f(double d) { cout << "B" << d; }\n};\nint main() {\n  B b;\n  b.f(5);\n  b.f(3.14);\n}', 'B5B3.14');
 
-  add('error', `HEREFORD BASE SYSTEMS:
-class Equipment {
-    public:
-        virtual void inspect() = 0;
-        virtual int getDurability() = 0;
-};
-class Weapon : public Equipment {
-    int durability;
-    public:
-        Weapon(int d) : durability(d) {}
-        void inspect() { cout << "Weapon"; }
-};
-int main() {
-    Weapon w(100);
-    return 0;
-}
-What is the error?`, 'getDurability() not overridden - Weapon still abstract');
+  add('oneword', 'What is the output?\n\nstruct A { int v = 1; };\nstruct B : A { int v = 2; };\nstruct C : B { int v = 3; };\nint main() {\n  C c;\n  cout << c.v;\n  cout << static_cast<B&>(c).v;\n  cout << static_cast<A&>(c).v;\n}', '321');
+  add('oneword', 'What is the output?\n\nclass Printer {\npublic:\n  static void print(int x) { cout << "int:" << x; }\n  static void print(double x) { cout << "dbl:" << x; }\n  static void print(const char* x) { cout << "str:" << x; }\n};\nint main() {\n  Printer::print(42);\n  Printer::print(3.14);\n  Printer::print("hi");\n}', 'int:42dbl:3.14str:hi');
+  add('oneword', 'What is the output?\n\nstruct Recurse {\n  static int f(int n) {\n    return n <= 1 ? 1 : n * f(n-1);\n  }\n  static int g(int n) {\n    return n <= 0 ? 0 : f(n) + g(n-1);\n  }\n};\nint main() {\n  cout << Recurse::g(4);\n}', '33');
+  add('oneword', 'What is the output?\n\nclass Sorter {\n  int data[5];\n  int sz;\npublic:\n  Sorter() : sz(0) {}\n  void add(int v) { data[sz++] = v; }\n  void sort() {\n    for(int i=0;i<sz-1;i++)\n      for(int j=0;j<sz-1-i;j++)\n        if(data[j]>data[j+1]) { int t=data[j]; data[j]=data[j+1]; data[j+1]=t; }\n  }\n  void print() { for(int i=0;i<sz;i++) cout << data[i]; }\n};\nint main() {\n  Sorter s;\n  s.add(3); s.add(1); s.add(4); s.add(1); s.add(5);\n  s.sort();\n  s.print();\n}', '11345');
+  add('oneword', 'What is the output?\n\nstruct Danger {\n  int& ref;\n  Danger(int& r) : ref(r) {}\n  int get() { return ref; }\n};\nDanger make() {\n  int local = 42;\n  return Danger(local);\n}\nint main() {\n  auto d = make();\n  cout << d.get();\n}', 'Undefined');
 
-  add('error', `class Operative {
-    int *health;
-    public:
-        Operative(int h) : health(new int(h)) {}
-        Operative(const Operative &o) : health(new int(*o.health)) {}
-        virtual ~Operative() { delete health; }
-};
-class Sniper : public Operative {
-    int *ammo;
-    public:
-        Sniper(int h, int a) : Operative(h), ammo(new int(a)) {}
-        Sniper(const Sniper &s) : Operative(s), ammo(new int(*s.ammo)) {}
-};
-int main() {
-    Operative *arr[2];
-    arr[0] = new Sniper(100, 50);
-    arr[1] = new Sniper(100, 30);
-    delete arr[0];
-    delete arr[1];
-    return 0;
-}
-What is the error?`, 'Sniper destructor missing - ammo not deleted, memory leak');
+  add('oneword', 'What is the output?\n\nstruct Sig {\n  struct param {};\n  void f(param) { cout << "param"; }\n  void f(int) { cout << "int"; }\n};\nstruct Child : Sig {\n  using Sig::f;\n  void f(double) { cout << "double"; }\n};\nint main() {\n  Child c;\n  c.f(1);\n  c.f(1.0);\n  c.f(Sig::param{});\n}', 'intdoubleparam');
+  add('oneword', 'What is the output?\n\nclass Filter {\npublic:\n  virtual int apply(int x) = 0;\n  virtual ~Filter() {}\n};\nclass DoubleFilter : public Filter {\npublic:\n  int apply(int x) { return x * 2; }\n};\nclass IncrFilter : public Filter {\npublic:\n  int apply(int x) { return x + 1; }\n};\nclass Pipeline {\n  Filter* steps[10];\n  int count;\npublic:\n  Pipeline() : count(0) {}\n  void add(Filter* f) { steps[count++] = f; }\n  int run(int x) {\n    for(int i=0;i<count;i++) x = steps[i]->apply(x);\n    return x;\n  }\n};\nint main() {\n  DoubleFilter d;\n  IncrFilter i;\n  Pipeline p;\n  p.add(&d); p.add(&i);\n  cout << p.run(5);\n  Pipeline p2;\n  p2.add(&i); p2.add(&d);\n  cout << p2.run(5);\n}', '1112');
+  add('oneword', 'What is the output?\n\nclass Mark {\n  char c;\npublic:\n  Mark(char ch) : c(ch) { cout << c; }\n  ~Mark() { cout << \'~\' << c; }\n};\nvoid f() {\n  Mark a(\'A\');\n  Mark b(\'B\');\n}\nvoid g() {\n  Mark c(\'C\');\n}\nint main() {\n  f();\n  g();\n}', 'AB~B~AC~C');
+  add('oneword', 'What is the output?\n\nstruct Builder {\n  int a = 0, b = 0;\n  Builder& setA(int v) { a = v; return *this; }\n  Builder& setB(int v) { b = v; return *this; }\n  int build() { return a + b; }\n};\nint main() {\n  cout << Builder().setA(10).setB(20).build();\n  cout << Builder().setB(5).setA(3).build();\n}', '308');
+  add('oneword', 'What is the output?\n\nstruct A {\n  virtual void f() = 0;\n  void h() { cout << "h"; f(); cout << "H"; }\n  virtual ~A() {}\n};\nstruct B : A {\n  void f() { cout << "B"; }\n};\nstruct C : B {\n  void f() { cout << "C"; h(); }\n};\nint main() {\n  C c;\n  c.h();\n}', 'hChBHH');
 
-  add('mcq', `COMMAND SYSTEM:
-class Commander {
-    public:
-        void issueOrder() { cout << "C1"; }
-        virtual void issueOrder(int priority) { cout << "C2"; }
-};
-class FieldCommander : public Commander {
-    public:
-        void issueOrder(int priority) { cout << "FC"; }
-};
-What happens with: FieldCommander fc; fc.issueOrder();`, 
-    'Compilation error - issueOrder() hidden', 
-    ['Outputs "C1FC"', 'Compilation error - issueOrder() hidden', 'Outputs "C1"', 'Outputs "FC"']);
+  add('oneword', 'What is the output?\n\nclass Base {\npublic:\n  void greet() { cout << "hello"; }\n  virtual void id() { cout << "Base"; }\n};\nclass Der : private Base {\npublic:\n  void run() { greet(); id(); }\n  void id() { cout << "Der"; }\n};\nint main() {\n  Der d;\n  d.run();\n}', 'helloDer');
+  add('oneword', 'What is the output?\n\nclass A {\nprotected:\n  int x;\npublic:\n  A(int v) : x(v) {}\n  virtual void show() { cout << "A:" << x; }\n};\nclass B : protected A {\npublic:\n  B(int v) : A(v) {}\n  void display() { show(); } }\n};\nclass C : public B {\npublic:\n  C(int v) : B(v) {}\n  void show() { cout << "C:" << x; }\n  void run() { display(); show(); }\n};\nint main() {\n  C c(5);\n  c.run();\n}', 'C:5C:5');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  A() { cout << "A"; }\n  virtual ~A() { cout << "~A"; }\n};\nclass B : virtual public A {\npublic:\n  B() { cout << "B"; }\n  ~B() { cout << "~B"; }\n};\nclass C : virtual public A {\npublic:\n  C() { cout << "C"; }\n  ~C() { cout << "~C"; }\n};\nclass D : public B, public C {\n  A member;\npublic:\n  D() { cout << "D"; }\n  ~D() { cout << "~D"; }\n};\nint main() { D d; }', 'ABCAD~D~A~C~B~A');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  static const int VAL = 10;\n  virtual int get() { return VAL; }\n};\nclass B : public A {\npublic:\n  static const int VAL = 20;\n  int get() { return VAL; }\n};\nclass C : public B {\npublic:\n  static const int VAL = 30;\n  int get() { return VAL; }\n};\nint main() {\n  A* p = new C();\n  cout << p->get() << A::VAL << B::VAL << C::VAL;\n}', '30102030');
+  add('oneword', 'What is the output?\n\nstruct A { A(){cout<<"A";} ~A(){cout<<"~A";} };\nstruct B { A a; B(){cout<<"B";} ~B(){cout<<"~B";} };\nstruct C : B { A a2; C(){cout<<"C";} ~C(){cout<<"~C";} };\nint main() { C c; }', 'ABABC~C~B~A~A');
+  add('oneword', 'What is the output?\n\nclass Pair {\n  int a;\n  int b;\npublic:\n  Pair(int x) : b(x * 2), a(b + 1) {}\n  void show() const { cout << a << " " << b; }\n};\nint main() {\n  Pair p(5);\n  p.show();\n}', 'Undefined');
 
-  add('complete', `MULTI-THEATER OPERATIONS:
-class Theater {
-    public:
-        virtual void process() = 0;
-};
-class AirTheater : public Theater {
-    public:
-        void process() { cout << "Air"; }
-};
-class LandTheater : public Theater {
-    public:
-        void process() { cout << "Land"; }
-};
-int main() {
-    Theater *theaters[2];
-    theaters[0] = new AirTheater();
-    theaters[1] = new LandTheater();
-    
-    for(int i = 0; i < 2; i++)
-        theaters[i]->________();
-    
-    return 0;
-}
-What function call enables polymorphic execution?`, 'process');
+  // ── 20 ADDITIONAL LEVEL 10 QUESTIONS (IDs 1051–1070) ──
 
-  add('output', `class Weapon {
-    int ammo;
-    public:
-        Weapon(int a) : ammo(a) { cout << ammo; }
-        virtual ~Weapon() { cout << ammo; }
-};
-class Rifle : public Weapon {
-    int scope;
-    public:
-        Rifle(int a, int s) : Weapon(a), scope(s) { cout << scope; }
-        ~Rifle() { cout << scope; }
-};
-class Sniper : public Rifle {
-    int range;
-    public:
-        Sniper(int a, int s, int r) : Rifle(a, s), range(r) { cout << range; }
-        ~Sniper() { cout << range; }
-};
-int main() {
-    Weapon *w = new Sniper(30, 8, 1000);
-    delete w;
-    return 0;
-}
-What is the output?`, '3081000~1000~8~30');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  A() { cout << "A"; }\n  A(const A&) { cout << "cA"; }\n  virtual ~A() { cout << "~A"; }\n};\nclass B : public A {\npublic:\n  B() { cout << "B"; }\n  B(const B& o) : A(o) { cout << "cB"; }\n  ~B() { cout << "~B"; }\n};\nclass C : public B {\n  B member;\npublic:\n  C() { cout << "C"; }\n  ~C() { cout << "~C"; }\n};\nint main() {\n  C c;\n  cout << "|";\n}', 'ABABC|~C~B~A~B~A');
 
-  add('error', `SINGLETON COMMS:
-class TaskForceComms {
-    static TaskForceComms *instance;
-    TaskForceComms() {}
-    public:
-        static TaskForceComms* getInstance() {
-            if(instance == NULL)
-                instance = new TaskForceComms();
-            return instance;
-        }
-        void broadcast() { cout << "Broadcast"; }
-};
-int main() {
-    TaskForceComms *comms = TaskForceComms::getInstance();
-    comms->broadcast();
-    return 0;
-}
-What is the error?`, 'instance not initialized (TaskForceComms* TaskForceComms::instance = NULL; missing)');
+  add('oneword', 'What is the output?\n\nclass A {\nprotected:\n  int x;\npublic:\n  A(int v) : x(v) {}\n  virtual int f() { return x; }\n};\nclass B : virtual public A {\npublic:\n  B(int v) : A(v) {}\n  int f() { return x + 10; }\n};\nclass C : virtual public A {\npublic:\n  C(int v) : A(v) {}\n  int f() { return x + 100; }\n};\nclass D : public B, public C {\npublic:\n  D(int v) : A(v), B(v), C(v) {}\n  int f() { return B::f() + C::f(); }\n};\nint main() {\n  A* p = new D(5);\n  cout << p->f();\n}', '120');
 
-  add('design', `class Mission {
-    protected:
-        int threatLevel;
-    public:
-        Mission(int t) : threatLevel(t) {}
-        virtual void execute() { cout << threatLevel; }
-};
-class StealthMission : private Mission {
-    public:
-        StealthMission(int t) : Mission(t) {}
-        void deploy() { execute(); }
-};
-Can you do: StealthMission sm(5); Mission *m = &sm;`, 
-    'No - private inheritance prevents conversion');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  static int s;\n  A() { s++; }\n  A(const A&) { s += 10; }\n  ~A() { s--; }\n};\nint A::s = 0;\nint main() {\n  A a;\n  { A b = a; A c = a; }\n  cout << A::s;\n}', '19');
 
-  add('output', `class Rank {
-    int level;
-    public:
-        Rank(int l = 0) : level(l) { cout << level; }
-        Rank(const Rank &r) : level(r.level * 2) { cout << level; }
-        ~Rank() { cout << level; }
-};
-int main() {
-    Rank r1(2);
-    Rank r2 = r1;
-    Rank r3 = r2;
-    Rank r4(r3);
-    return 0;
-}
-What is the output?`, '248161616168422');
+  add('oneword', 'What is the output?\n\nclass Base {\npublic:\n  virtual void f() { cout << "Bf"; }\n  virtual void g() { cout << "Bg"; }\n};\nclass Mid : public Base {\npublic:\n  void f() { cout << "Mf"; g(); }\n};\nclass Top : public Mid {\npublic:\n  void g() { cout << "Tg"; }\n};\nint main() {\n  Base* p = new Top();\n  p->f();\n  cout << "|";\n  p->g();\n}', 'MfTg|Tg');
 
-  add('complete', `POLYMORPHIC THREATS:
-class Enemy {
-    public:
-        ________ void attack() = 0;
-};
-class Infantry : public Enemy {
-    public:
-        void attack() { cout << "Infantry"; }
-};
-class Vehicle : public Enemy {
-    public:
-        void attack() { cout << "Vehicle"; }
-};
-int main() {
-    Enemy *enemies[2];
-    enemies[0] = new Infantry();
-    enemies[1] = new Vehicle();
-    
-    for(int i = 0; i < 2; i++)
-        enemies[i]->attack();
-    
-    return 0;
-}
-What keyword makes attack() pure virtual?`, 'virtual');
+  add('oneword', 'What is the output?\n\nclass A {\n  int v;\npublic:\n  A(int x) : v(x) {}\n  friend ostream& operator<<(ostream& os, const A& a) {\n    return os << "[" << a.v << "]";\n  }\n  A operator+(const A& o) const { return A(v + o.v); }\n  A operator-(const A& o) const { return A(v - o.v); }\n};\nint main() {\n  A a(10), b(3), c(2);\n  cout << a - b + c;\n}', '[9]');
 
-  add('error', `class Squad {
-    static int squadCount;
-    public:
-        Squad() { squadCount++; }
-        ~Squad() { squadCount--; }
-        static int getCount() { return squadCount; }
-};
-int main() {
-    Squad s1, s2, s3;
-    cout << s1.getCount();
-    return 0;
-}
-What is the error?`, 'squadCount not initialized outside class');
+  add('oneword', 'What is the output?\n\nclass Counter {\n  static int alive;\npublic:\n  Counter() { alive++; }\n  Counter(const Counter&) { alive++; }\n  ~Counter() { alive--; }\n  static int count() { return alive; }\n};\nint Counter::alive = 0;\nint main() {\n  Counter a;\n  Counter b(a);\n  cout << Counter::count();\n  { Counter c(b); cout << Counter::count(); }\n  cout << Counter::count();\n}', '232');
 
-  add('mcq', `RESOURCE MANAGEMENT:
-class Helicopter {
-    int *fuel;
-    public:
-        Helicopter(int f) : fuel(new int(f)) {}
-        ~Helicopter() { delete fuel; }
-};
-What happens with: Helicopter h1(100); Helicopter h2 = h1; Helicopter h3(50); h3 = h1;`, 
-    'Triple deletion of h1\'s fuel', 
-    ['Compilation error', 'Memory leak', 'No problem', 'Triple deletion of h1\'s fuel']);
+  add('oneword', 'What is the output?\n\nclass Expr {\nprotected:\n  int val;\npublic:\n  Expr(int v) : val(v) {}\n  virtual Expr eval() { return Expr(val); }\n  int get() { return val; }\n};\nclass Add : public Expr {\n  Expr& left;\n  Expr& right;\npublic:\n  Add(Expr& l, Expr& r) : Expr(0), left(l), right(r) {}\n  Expr eval() { return Expr(left.eval().get() + right.eval().get()); }\n};\nint main() {\n  Expr a(3), b(7);\n  Add sum(a, b);\n  cout << sum.eval().get();\n}', '10');
 
-  add('error', `OBJECTIVE TRACKING:
-class Objective {
-    public:
-        virtual void complete() = 0;
-};
-class EliminateObjective : public Objective {
-    public:
-        void complete() { cout << "Eliminated"; }
-};
-class RescueObjective : public Objective {
-    public:
-        void rescue() { cout << "Rescued"; }
-};
-int main() {
-    RescueObjective ro;
-    return 0;
-}
-What is the error?`, 'complete() not overridden - RescueObjective still abstract');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  virtual void process() {\n    cout << "A(";\n    step();\n    cout << ")";\n  }\n  virtual void step() { cout << "a"; }\n};\nclass B : public A {\npublic:\n  void step() { cout << "b"; }\n};\nclass C : public B {\npublic:\n  void process() {\n    A::process();\n    cout << "+";\n    step();\n  }\n  void step() { cout << "c"; }\n};\nint main() {\n  A* p = new C();\n  p->process();\n}', 'A(c)+c');
 
-  add('output', `class Base {
-    public:
-        virtual void func(int x = 5) { cout << x + x; }
-};
-class Derived1 : public Base {
-    public:
-        void func(int x = 10) { cout << x * x; }
-};
-class Derived2 : public Derived1 {
-    public:
-        void func(int x = 15) { cout << x - x; }
-};
-int main() {
-    Base *b1 = new Derived1();
-    Base *b2 = new Derived2();
-    Derived1 *d = new Derived2();
-    b1->func();
-    b2->func();
-    d->func();
-    return 0;
-}
-What is the output?`, '25010');
+  add('oneword', 'Find the bug:\n\nclass Handle {\n  int* data;\n  int refCount;\npublic:\n  Handle(int v) : data(new int(v)), refCount(1) {}\n  Handle(const Handle& o) : data(o.data), refCount(o.refCount + 1) {}\n  ~Handle() {\n    refCount--;\n    if(refCount == 0) delete data;\n  }\n};', 'doublefree');
 
-  add('complete', `LOADOUT MANAGEMENT:
-class Weapon {
-    public:
-        virtual void fire() { cout << "Fire"; }
-};
-class Loadout {
-    Weapon *primary;
-    Weapon *secondary;
-    public:
-        Loadout(Weapon *p, Weapon *s) : primary(p), secondary(s) {}
-        ________ { /* Loadout doesn't own weapons */ }
-        void attack() {
-            primary->fire();
-            secondary->fire();
-        }
-};
-Should the destructor delete primary and secondary?`, 'No - aggregation, doesn\'t own');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  int x;\n  A(int v) : x(v) {}\n  bool operator<(const A& o) const { return x < o.x; }\n  bool operator>(const A& o) const { return x > o.x; }\n  bool operator==(const A& o) const { return x == o.x; }\n};\nint main() {\n  A a(5), b(5), c(3);\n  cout << (a < b) << (a == b) << (a > c) << (c < a);\n}', '0111');
 
-  add('mcq', `class Soldier {
-    int health;
-    public:
-        Soldier(int h) : health(h) {}
-        void heal() const { health += 10; }
-};
-What's wrong?`, 
-    'Cannot modify health in const function', 
-    ['health should be public', 'Cannot modify health in const function', 'Missing virtual destructor', 'Nothing']);
+  add('oneword', 'What is the output?\n\nclass Singleton {\n  static Singleton* inst;\n  int val;\n  Singleton(int v) : val(v) {}\npublic:\n  static Singleton& get(int v = 0) {\n    if(!inst) inst = new Singleton(v);\n    return *inst;\n  }\n  int getVal() { return val; }\n};\nSingleton* Singleton::inst = nullptr;\nint main() {\n  cout << Singleton::get(42).getVal();\n  cout << Singleton::get(99).getVal();\n}', '4242');
 
-  add('output', `class Mission {
-    char *codename;
-    public:
-        Mission(const char *c) {
-            codename = new char[strlen(c) + 1];
-            strcpy(codename, c);
-        }
-        Mission(const Mission &m) {
-            codename = new char[strlen(m.codename) + 1];
-            strcpy(codename, m.codename);
-        }
-        ~Mission() { delete[] codename; cout << "~"; }
-};
-int main() {
-    Mission m1("Wolverine");
-    Mission m2 = m1;
-    {
-        Mission m3 = m2;
-    }
-    return 0;
-}
-What is the output?`, '~~~');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  virtual void f() = 0;\n  void call() { cout << "["; f(); cout << "]"; }\n  virtual ~A() {}\n};\nclass B : public A {\npublic:\n  void f() { cout << "B"; call(); }\n};\nclass C : public B {\npublic:\n  void f() { cout << "C"; }\n};\nint main() {\n  A* p = new C();\n  p->call();\n}', '[C]');
 
-  add('error', `DYNAMIC THREAT RESPONSE:
-class Response {
-    public:
-        virtual void deploy() = 0;
-};
-class ResponseFactory {
-    public:
-        Response* createResponse(int level) {
-            if(level < 3)
-                return new ReconResponse();
-            else
-                return new AssaultResponse();
-        }
-};
-class ReconResponse : public Response {
-    public:
-        void deploy() { cout << "Recon"; }
-};
-class AssaultResponse : public Response {
-    public:
-        void deploy() { cout << "Assault"; }
-};
-What's potentially wrong with this factory?`, 'Memory leak - returned pointers never deleted');
+  add('oneword', 'What is the output?\n\nclass Coord {\n  int x, y;\npublic:\n  Coord(int a, int b) : x(a), y(b) {}\n  Coord operator+(const Coord& o) const { return Coord(x+o.x, y+o.y); }\n  Coord operator*(int n) const { return Coord(x*n, y*n); }\n  friend ostream& operator<<(ostream& os, const Coord& c) {\n    return os << "(" << c.x << "," << c.y << ")";\n  }\n};\nint main() {\n  Coord a(1,2), b(3,4);\n  cout << (a + b) * 2;\n}', '(8,12)');
 
-  add('error', `class Combatant {
-    public:
-        virtual void attack() = 0;
-        virtual void defend() = 0;
-        virtual void retreat() = 0;
-};
-class Soldier : public Combatant {
-    public:
-        void attack() { cout << "Attack"; }
-        void defend() { cout << "Defend"; }
-};
-int main() {
-    Soldier s;
-    return 0;
-}
-What is the error?`, 'retreat() not overridden - Soldier still abstract');
+  add('oneword', 'What is the output?\n\nclass A {\n  int x;\npublic:\n  A(int v) : x(v) {}\n  virtual ~A() {}\n  virtual int hash() { return x * 31; }\n};\nclass B : public A {\n  int y;\npublic:\n  B(int a, int b) : A(a), y(b) {}\n  int hash() { return A::hash() + y * 17; }\n};\nint main() {\n  A* p = new B(2, 3);\n  cout << p->hash();\n}', '113');
 
-  add('mcq', `EQUIPMENT SHARING:
-class Equipment {
-    char *name;
-    public:
-        Equipment(const char *n) {
-            name = new char[strlen(n) + 1];
-            strcpy(name, n);
-        }
-        Equipment(const Equipment &e) : name(e.name) {}
-        ~Equipment() { delete[] name; }
-};
-What problem occurs when copying?`, 
-    'Shallow copy - double deletion', 
-    ['name becomes NULL', 'Shallow copy - double deletion', 'Memory leak', 'No problem']);
+  add('oneword', 'What is the output?\n\nclass Latch {\n  bool open;\npublic:\n  Latch() : open(false) {}\n  void flip() { open = !open; }\n  bool isOpen() const { return open; }\n};\nclass DualLatch {\n  Latch a, b;\npublic:\n  void toggle() { a.flip(); b.flip(); b.flip(); }\n  void status() { cout << a.isOpen() << b.isOpen(); }\n};\nint main() {\n  DualLatch d;\n  d.toggle();\n  d.toggle();\n  d.status();\n}', '00');
 
-  add('output', `class Operative {
-    public:
-        Operative() { cout << "O"; }
-        virtual ~Operative() { cout << "~O"; }
-};
-class Sniper : public Operative {
-    public:
-        Sniper() { cout << "S"; }
-        ~Sniper() { cout << "~S"; }
-};
-class Elite : public Sniper {
-    public:
-        Elite() { cout << "E"; }
-        ~Elite() { cout << "~E"; }
-};
-int main() {
-    Operative *arr[2];
-    arr[0] = new Sniper();
-    arr[1] = new Elite();
-    for(int i = 0; i < 2; i++)
-        delete arr[i];
-    return 0;
-}
-What is the output?`, 'OSOSE~S~O~E~S~O');
+  add('oneword', 'What is the output?\n\nclass Memo {\n  int history[10];\n  int pos;\npublic:\n  Memo() : pos(0) {}\n  void save(int v) { history[pos++] = v; }\n  int undo() { return history[--pos]; }\n};\nint main() {\n  Memo m;\n  m.save(10);\n  m.save(20);\n  m.save(30);\n  cout << m.undo() << m.undo();\n}', '3020');
 
-  add('complete', `COMMAND HIERARCHY:
-class Commander {
-    public:
-        ________ void giveOrder() = 0;
-        void execute() {
-            giveOrder();
-            cout << "Order executed";
-        }
-};
-class General : public Commander {
-    public:
-        void giveOrder() { cout << "General order: "; }
-};
-class Captain : public Commander {
-    public:
-        void giveOrder() { cout << "Captain order: "; }
-};
-What keyword is needed in Commander::giveOrder()?`, 'virtual');
+  add('oneword', 'What is the output?\n\nclass Observable {\npublic:\n  virtual void onChange() = 0;\n  void trigger() {\n    cout << "T";\n    onChange();\n  }\n  virtual ~Observable() {}\n};\nclass Widget : public Observable {\n  string name;\npublic:\n  Widget(string n) : name(n) {}\n  void onChange() { cout << name; }\n};\nint main() {\n  Widget w("btn");\n  w.trigger();\n  w.trigger();\n}', 'TbtnTbtn');
 
-  add('design', `class Base {
-    public:
-        Base() { cout << "B"; deploy(); }
-        virtual void deploy() { cout << "b"; }
-        ~Base() { deploy(); }
-};
-class Derived : public Base {
-    public:
-        Derived() { deploy(); }
-        void deploy() { cout << "d"; }
-        ~Derived() { deploy(); }
-};
-What is output of: Base *b = new Derived(); delete b;`, 
-    'Bbddb');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  int x;\n  A(int v) : x(v) {}\n};\nclass B : public A {\npublic:\n  int x;\n  B(int a, int b) : A(a), x(b) {}\n  void show() { cout << x << A::x; }\n};\nclass C : public B {\npublic:\n  int x;\n  C(int a, int b, int c) : B(a, b), x(c) {}\n  void show() { cout << x << B::x << A::x; }\n};\nint main() {\n  C c(1, 2, 3);\n  c.show();\n}', '321');
 
-  add('output', `class Counter {
-    static int count;
-    int id;
-    public:
-        Counter() : id(count) { count += 3; cout << id; }
-        Counter(int x) : id(x) { count = x + 5; cout << id; }
-        ~Counter() { cout << id; }
-};
-int Counter::count = 10;
-int main() {
-    Counter c1;
-    Counter c2(20);
-    Counter c3;
-    return 0;
-}
-What is the output?`, '10202525201010');
+  add('oneword', 'What is the output?\n\nclass Strategy {\npublic:\n  virtual int execute(int a, int b) = 0;\n  virtual ~Strategy() {}\n};\nclass AddStrategy : public Strategy {\npublic:\n  int execute(int a, int b) { return a + b; }\n};\nclass MulStrategy : public Strategy {\npublic:\n  int execute(int a, int b) { return a * b; }\n};\nclass Context {\n  Strategy* s;\npublic:\n  Context(Strategy* st) : s(st) {}\n  void setStrategy(Strategy* st) { s = st; }\n  int run(int a, int b) { return s->execute(a, b); }\n};\nint main() {\n  AddStrategy add;\n  MulStrategy mul;\n  Context ctx(&add);\n  cout << ctx.run(3, 4);\n  ctx.setStrategy(&mul);\n  cout << ctx.run(3, 4);\n}', '712');
 
-  add('mcq', `MISSION LIFECYCLE:
-class Mission {
-    public:
-        virtual void execute() = 0;
-        void run() {
-            brief();
-            execute();
-            report();
-        }
-    private:
-        void brief() { cout << "Brief"; }
-        void report() { cout << "Report"; }
-};
-Can derived classes override brief() and report()?`, 
-    'No - they are private', 
-    ['Only brief()', 'Only report()', 'Yes', 'No - they are private']);
+  // ── 33 MORE LEVEL 10 QUESTIONS (IDs 1068–1100) ──
 
-  add('error', `class Vehicle {
-    int *fuel;
-    public:
-        Vehicle(int f) : fuel(new int(f)) {}
-        Vehicle(const Vehicle &v) : fuel(new int(*v.fuel)) {}
-        ~Vehicle() { delete fuel; }
-};
-int main() {
-    Vehicle v1(100);
-    Vehicle v2(50);
-    v1 = v2;
-    return 0;
-}
-What is the error?`, 'No assignment operator - v1\'s old fuel leaked, possible double deletion');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  A() { cout << "A"; }\n  virtual ~A() { cout << "~A"; }\n};\nclass B : public A {\n  A member;\npublic:\n  B() { cout << "B"; }\n  ~B() { cout << "~B"; }\n};\nclass C : public B {\n  A m1, m2;\npublic:\n  C() { cout << "C"; }\n  ~C() { cout << "~C"; }\n};\nint main() {\n  A* p = new C();\n  delete p;\n}', 'AABAAC~C~A~A~B~A~A');
 
-  add('output', `class A {
-    public:
-        virtual void show() { cout << "A"; }
-        void process() { show(); cout << "-"; }
-};
-class B : public A {
-    public:
-        void show() { cout << "B"; }
-};
-class C : public B {
-    public:
-        void show() { cout << "C"; }
-};
-int main() {
-    A *arr[3];
-    arr[0] = new A();
-    arr[1] = new B();
-    arr[2] = new C();
-    for(int i = 0; i < 3; i++)
-        arr[i]->process();
-    return 0;
-}
-What is the output?`, 'A-B-C-');
+  add('oneword', 'What is the output?\n\nclass Lock {\n  static int depth;\n  const char* name;\npublic:\n  Lock(const char* n) : name(n) {\n    cout << name << "+" << depth;\n    depth++;\n  }\n  ~Lock() {\n    depth--;\n    cout << name << "-" << depth;\n  }\n};\nint Lock::depth = 0;\nvoid inner() { Lock l("I"); }\nvoid outer() { Lock l("O"); inner(); }\nint main() { outer(); }', 'O+0I+1I-1O-0');
 
-  add('complete', `COORDINATED OPERATIONS:
-class Squad {
-    public:
-        virtual void execute() = 0;
-};
-class AssaultSquad : public Squad {
-    public:
-        ________ execute() { cout << "Assault"; }
-};
-class ReconSquad : public Squad {
-    public:
-        ________ execute() { cout << "Recon"; }
-};
-What keyword properly overrides execute()?`, 'void');
+  add('oneword', 'What is the output?\n\nclass TypeMap {\npublic:\n  virtual const char* name() = 0;\n  virtual int code() = 0;\n  void print() { cout << name() << ":" << code() << " "; }\n  virtual ~TypeMap() {}\n};\nclass IntType : public TypeMap {\npublic:\n  const char* name() { return "int"; }\n  int code() { return 1; }\n};\nclass FloatType : public TypeMap {\npublic:\n  const char* name() { return "float"; }\n  int code() { return 2; }\n};\nclass PtrType : public TypeMap {\n  TypeMap* inner;\npublic:\n  PtrType(TypeMap* t) : inner(t) {}\n  const char* name() { return "ptr"; }\n  int code() { return inner->code() + 10; }\n};\nint main() {\n  IntType i;\n  PtrType p(&i);\n  PtrType pp(&p);\n  pp.print();\n}', 'ptr:21');
 
-  add('mcq', `SYSTEMS ARCHITECT:
-class System {
-    public:
-        System() { cout << "Init"; }
-        ~System() { cout << "Shutdown"; }
-};
-class MainSystem {
-    System s1, s2;
-    public:
-        MainSystem() { cout << "Main"; }
-        ~MainSystem() { cout << "~Main"; }
-};
-What is output of: MainSystem ms;`, 
-    'InitInitMain~MainShutdownShutdown', 
-    ['InitInitMain~MainShutdownShutdown', 'MainInitInit~MainShutdownShutdown', 'InitMainInitInitShutdownMain', 'InitInitMain']);
+  add('oneword', 'What is the output?\n\nclass Alloc {\n  static int total;\n  int sz;\npublic:\n  Alloc(int n) : sz(n) { total += n; }\n  Alloc(const Alloc& o) : sz(o.sz) { total += sz; }\n  ~Alloc() { total -= sz; }\n  static int getTotal() { return total; }\n};\nint Alloc::total = 0;\nvoid consume(Alloc a) { cout << Alloc::getTotal(); }\nint main() {\n  Alloc a(10);\n  consume(a);\n  cout << Alloc::getTotal();\n}', '2010');
 
-  add('output', `class Weapon {
-    int damage;
-    public:
-        Weapon(int d = 0) : damage(d) { cout << damage; }
-        Weapon(const Weapon &w) : damage(w.damage + w.damage) { cout << damage; }
-        ~Weapon() { cout << damage; }
-};
-int main() {
-    Weapon w1(5);
-    Weapon w2 = w1;
-    Weapon w3 = w2;
-    return 0;
-}
-What is the output?`, '5102020201055');
+  add('oneword', 'What is the output?\n\nclass A {\nprotected:\n  int x;\npublic:\n  A(int v) : x(v) {}\n  virtual A* morph() {\n    x *= 2;\n    return this;\n  }\n  int getX() { return x; }\n};\nclass B : public A {\npublic:\n  B(int v) : A(v) {}\n  B* morph() override {\n    x += 100;\n    return this;\n  }\n};\nint main() {\n  B b(5);\n  A* p = &b;\n  cout << p->morph()->morph()->getX();\n}', '205');
 
-  add('error', `INVENTORY SYSTEM:
-class Equipment {
-    static int totalEquipment;
-    int id;
-    public:
-        Equipment() : id(totalEquipment++) {}
-        int getID() { return id; }
-};
-class Weapon : public Equipment {
-    public:
-        Weapon() {}
-};
-int main() {
-    Weapon w1, w2;
-    cout << w1.getID();
-    return 0;
-}
-What is the error?`, 'totalEquipment not initialized outside class');
+  add('oneword', 'What is the output?\n\nclass Node {\npublic:\n  int val;\n  Node* next;\n  Node(int v, Node* n = nullptr) : val(v), next(n) {}\n};\nint sumList(Node* head) {\n  if(!head) return 0;\n  return head->val + sumList(head->next);\n}\nNode* reverse(Node* head) {\n  Node* prev = nullptr;\n  while(head) {\n    Node* next = head->next;\n    head->next = prev;\n    prev = head;\n    head = next;\n  }\n  return prev;\n}\nint main() {\n  Node* list = new Node(1, new Node(2, new Node(3)));\n  cout << sumList(list);\n  Node* rev = reverse(list);\n  cout << rev->val << rev->next->val;\n}', '632');
 
-  add('error', `class Array {
-    int *data;
-    int size;
-    public:
-        Array(int s) : size(s), data(new int[s]) {}
-        Array(const Array &a) : size(a.size), data(new int[a.size]) {
-            for(int i = 0; i < size; i++)
-                data[i] = a.data[i];
-        }
-        ~Array() { delete data; }
-};
-What is the error?`, 'Should use delete[] data');
+  add('oneword', 'What is the output?\n\nstruct Counter {\n  int n;\n  Counter(int v) : n(v) {}\n  Counter& operator--() { --n; return *this; }\n  Counter operator--(int) { Counter t = *this; --n; return t; }\n  friend ostream& operator<<(ostream& os, Counter c) { return os << c.n; }\n};\nint main() {\n  Counter c(10);\n  cout << c-- << --c << c;\n}', '1088');
 
-  add('mcq', `RESOURCE LIFECYCLE:
-class Squad {
-    int members;
-    public:
-        Squad(int m) : members(m) {}
-        ~Squad() { cout << "Disbanded"; }
-};
-What happens with: Squad *s = new Squad(4); delete s;`, 
-    'Outputs "Disbanded"', 
-    ['No output', 'Compilation error', 'Memory leak', 'Outputs "Disbanded"']);
+  add('oneword', 'Find the bug:\n\nclass Callback {\n  void (*fn)();\npublic:\n  Callback(void (*f)()) : fn(f) {}\n  void operator()() { fn(); }\n};\nclass Timer {\n  int interval;\n  Callback cb;\npublic:\n  Timer(int ms, void (*f)()) : interval(ms), cb(f) {}\n  void fire() {\n    cb();\n    interval = 0;\n  }\n  Timer(const Timer&) = delete;\n};', 'nomove');
 
-  add('output', `class Number {
-    int val;
-    public:
-        Number(int v = 0) : val(v) {}
-        Number operator+(Number n) { return Number(val + n.val); }
-        Number operator*(Number n) { return Number(val * n.val); }
-        Number operator-(Number n) { return Number(val - n.val); }
-        friend ostream& operator<<(ostream &o, Number n) {
-            o << n.val;
-            return o;
-        }
-};
-int main() {
-    Number n1(8), n2(3), n3(2), n4(5);
-    cout << (n1 - n2) * n3 + n4;
-    return 0;
-}
-What is the output?`, '15');
+  add('oneword', 'What is the output?\n\nclass Expr {\npublic:\n  virtual int eval() const = 0;\n  virtual ~Expr() {}\n};\nclass Lit : public Expr {\n  int v;\npublic:\n  Lit(int x) : v(x) {}\n  int eval() const { return v; }\n};\nclass Neg : public Expr {\n  const Expr& inner;\npublic:\n  Neg(const Expr& e) : inner(e) {}\n  int eval() const { return -inner.eval(); }\n};\nclass Add : public Expr {\n  const Expr &l, &r;\npublic:\n  Add(const Expr& a, const Expr& b) : l(a), r(b) {}\n  int eval() const { return l.eval() + r.eval(); }\n};\nint main() {\n  Lit a(3), b(7);\n  Neg na(a);\n  Add expr(na, b);\n  cout << expr.eval();\n}', '4');
 
-  add('complete', `BRIEFING ROOM:
-class BriefingRoom {
-    static BriefingRoom *instance;
-    ________ BriefingRoom() {}
-    public:
-        static BriefingRoom* getInstance() {
-            if(instance == NULL)
-                instance = new BriefingRoom();
-            return instance;
-        }
-};
-BriefingRoom* BriefingRoom::instance = NULL;
-What access specifier prevents external instantiation?`, 'private');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  virtual void f() { cout << "A"; }\n  virtual ~A() {}\n};\nclass B : virtual public A {\npublic:\n  void f() { cout << "B"; }\n};\nclass C : virtual public A {\npublic:\n  void f() { cout << "C"; }\n};\nclass D : public B, public C {\npublic:\n  void f() {\n    B::f();\n    C::f();\n    cout << "D";\n  }\n};\nint main() {\n  A* p = new D();\n  p->f();\n}', 'BCD');
 
-  add('mcq', `class Operative {
-    public:
-        void train() { cout << "T1"; }
-        virtual void train(int hours) { cout << "T2"; }
-};
-class Specialist : public Operative {
-    public:
-        void train(int hours) { cout << "S"; }
-};
-What happens with: Specialist sp; sp.train();`, 
-    'Compilation error', 
-    ['Outputs "T1S"', 'Outputs "S"', 'Compilation error', 'Outputs "T1"']);
+  add('oneword', 'What is the output?\n\nclass Guard {\n  const char* label;\npublic:\n  Guard(const char* l) : label(l) { cout << "+" << label; }\n  ~Guard() { cout << "-" << label; }\n};\nvoid inner() { Guard g("I"); }\nvoid outer() {\n  Guard g("O");\n  inner();\n  inner();\n}\nint main() { outer(); }', '+O+I-I+I-I-O');
 
-  add('output', `class Test {
-    public:
-        Test() { cout << "C"; }
-        Test(int x) { cout << "P" << x; }
-        Test(const Test&) { cout << "CC"; }
-        Test& operator=(const Test&) { cout << "="; return *this; }
-        ~Test() { cout << "D"; }
-};
-int main() {
-    Test t1;
-    Test t2(7);
-    Test t3 = t1;
-    Test t4(9);
-    t1 = t4;
-    t2 = t3;
-    return 0;
-}
-What is the output?`, 'CP7CCP9==DDDD');
+  add('oneword', 'What is the output?\n\nclass Matrix2 {\n  int m[2][2];\npublic:\n  Matrix2(int a, int b, int c, int d) {\n    m[0][0]=a; m[0][1]=b; m[1][0]=c; m[1][1]=d;\n  }\n  Matrix2 operator*(const Matrix2& o) const {\n    return Matrix2(\n      m[0][0]*o.m[0][0] + m[0][1]*o.m[1][0],\n      m[0][0]*o.m[0][1] + m[0][1]*o.m[1][1],\n      m[1][0]*o.m[0][0] + m[1][1]*o.m[1][0],\n      m[1][0]*o.m[0][1] + m[1][1]*o.m[1][1]\n    );\n  }\n  int det() const { return m[0][0]*m[1][1] - m[0][1]*m[1][0]; }\n};\nint main() {\n  Matrix2 a(1,2,3,4);\n  Matrix2 b(2,0,1,2);\n  cout << (a*b).det();\n}', '-4');
 
-  add('error', `class Mission {
-    public:
-        virtual int calculatePriority(int threat, int resources) = 0;
-};
-class HighRisk : public Mission {
-    public:
-        int calculatePriority(int threat, int resources) { return threat * 2; }
-};
-class LowRisk : public Mission {
-    public:
-        double calculatePriority(int threat, int resources) { return threat * 0.5; }
-};
-What is the error?`, 'LowRisk return type different - doesn\'t override, still abstract');
+  add('oneword', 'What is the output?\n\nclass Handler {\npublic:\n  virtual bool handle(int code) = 0;\n  virtual ~Handler() {}\n};\nclass RangeHandler : public Handler {\n  int lo, hi;\n  Handler* next;\npublic:\n  RangeHandler(int l, int h, Handler* n = nullptr) : lo(l), hi(h), next(n) {}\n  bool handle(int code) {\n    if(code >= lo && code <= hi) { cout << "R" << lo; return true; }\n    return next ? next->handle(code) : false;\n  }\n};\nclass DefaultHandler : public Handler {\npublic:\n  bool handle(int code) { cout << "D"; return true; }\n};\nint main() {\n  DefaultHandler def;\n  RangeHandler mid(10, 20, &def);\n  RangeHandler top(1, 5, &mid);\n  top.handle(3);\n  top.handle(15);\n  top.handle(99);\n}', 'R1R10D');
 
-  add('complete', `OPERATIONAL COMMAND SYSTEM:
-class Force {
-    public:
-        virtual void strike() = 0;
-};
-class AirForce : public Force {
-    public:
-        void strike() { cout << "Air strike"; }
-};
-class LandForce : public Force {
-    public:
-        void strike() { cout << "Land strike"; }
-};
-class Commander {
-    Force **forces;
-    int count;
-    public:
-        Commander(Force **f, int c) : forces(f), count(c) {}
-        void coordinatedStrike() {
-            for(int i = 0; i < count; i++)
-                forces[i]->________();
-        }
-};
-What function call enables polymorphic strikes?`, 'strike');
+  add('oneword', 'What is the output?\n\nclass A {\n  int x;\npublic:\n  A(int v) : x(v) {}\n  A operator*(const A& o) const { return A(x * o.x); }\n  A operator+(const A& o) const { return A(x + o.x); }\n  bool operator==(const A& o) const { return x == o.x; }\n  friend ostream& operator<<(ostream& os, const A& a) { return os << a.x; }\n};\nint main() {\n  A a(2), b(3), c(5);\n  cout << (a * b + c == A(11));\n  cout << (a + b * c == A(17));\n}', '11');
 
-  add('output', `class Rank {
-    int level;
-    public:
-        Rank(int l = 0) : level(l) { cout << level; }
-        Rank& operator++() { level++; return *this; }
-        Rank operator++(int) { Rank r = *this; level++; return r; }
-        int get() { return level; }
-};
-int main() {
-    Rank r(3);
-    cout << (++r).get();
-    cout << (r++).get();
-    cout << r.get();
-    return 0;
-}
-What is the output?`, '3445');
+  add('oneword', 'What is the output?\n\nstruct Base {\n  int x;\n  Base(int v) : x(v) { cout << "B" << x; }\n  Base(const Base& o) : x(o.x + 1) { cout << "cB" << x; }\n  virtual ~Base() { cout << "~B" << x; }\n};\nstruct Der : Base {\n  int y;\n  Der(int a, int b) : Base(a), y(b) { cout << "D" << y; }\n  ~Der() { cout << "~D" << y; }\n};\nint main() {\n  Der d(1, 2);\n  Base b = d;\n  cout << "|";\n}', 'B1D2cB2|~B2~D2~B1');
 
-  add('error', `FINAL TAKEDOWN:
-class SecurityLayer {
-    public:
-        virtual void breach() = 0;
-};
-class Firewall : public SecurityLayer {
-    public:
-        void breach() { cout << "Firewall breached"; }
-};
-class Encryption : public SecurityLayer {
-    public:
-        void decrypt() { cout << "Decrypted"; }
-};
-int main() {
-    Encryption e;
-    return 0;
-}
-What is the error?`, 'breach() not overridden - Encryption still abstract');
+  add('oneword', 'What is the output?\n\nclass Wrapper {\n  int v;\npublic:\n  explicit Wrapper(int x) : v(x) {}\n  Wrapper operator+(const Wrapper& o) const { return Wrapper(v + o.v); }\n  Wrapper operator*(const Wrapper& o) const { return Wrapper(v * o.v); }\n  operator int() const { return v; }\n};\nint main() {\n  Wrapper a(3), b(4), c(2);\n  int result = a + b * c;\n  cout << result;\n}', '11');
 
-  add('output', `class Base {
-    public:
-        void func() { cout << "B"; }
-        virtual void display() { cout << "b"; }
-        void execute() { func(); display(); }
-};
-class Derived : public Base {
-    public:
-        void func() { cout << "D"; }
-        void display() { cout << "d"; }
-};
-int main() {
-    Base b;
-    Derived d;
-    Base *p1 = &b;
-    Base *p2 = &d;
-    p1->execute();
-    p2->execute();
-    return 0;
-}
-What is the output?`, 'BbBd');
+  add('oneword', 'Find the bug:\n\nclass Logger {\n  ofstream file;\npublic:\n  Logger(const char* fname) : file(fname) {}\n  void log(const string& msg) {\n    file << msg << endl;\n  }\n  Logger(const Logger& o) : file(o.file.rdbuf()->pubseekoff(0, ios::cur) ? "" : "") {}\n};', 'uncopyable');
 
-  add('error', `class Calculator {
-    public:
-        int add(int a, int b) { return a + b; }
-        int add(int a, int b, int c = 0) { return a + b + c; }
-};
-What is the error?`, 'Ambiguous overload - add(int, int) matches both');
+  add('oneword', 'What is the output?\n\nclass BitField {\n  unsigned int data = 0;\npublic:\n  BitField& set(int bit) { data |= (1u << bit); return *this; }\n  BitField& toggle(int bit) { data ^= (1u << bit); return *this; }\n  int popcount() const {\n    unsigned int d = data;\n    int c = 0;\n    while(d) { d &= (d-1); c++; }\n    return c;\n  }\n};\nint main() {\n  BitField bf;\n  bf.set(0).set(1).set(2).toggle(1).set(5);\n  cout << bf.popcount();\n}', '3');
 
-  add('complete', `SYSTEMS ARCHITECT FINAL CHALLENGE:
-class Operative {
-    public:
-        ________ void execute() = 0;
-};
-class Mission {
-    Operative **team;
-    int size;
-    public:
-        Mission(Operative **t, int s) : team(t), size(s) {}
-        void deploy() {
-            for(int i = 0; i < size; i++)
-                team[i]->execute();
-        }
-};
-What keyword makes execute() polymorphic?`, 'virtual');
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  virtual int f(int x) { return x + 1; }\n  int chain(int x) { return f(f(f(x))); }\n};\nclass B : public A {\npublic:\n  int f(int x) { return x * 2; }\n};\nint main() {\n  A a;\n  B b;\n  cout << a.chain(1) << b.chain(1);\n}', '48');
 
-  add('output', `class TF141 {
-    static int operatives;
-    int id;
-    public:
-        TF141() : id(++operatives) { cout << id; }
-        TF141(const TF141 &t) : id(++operatives) { cout << id; }
-        ~TF141() { cout << id; operatives--; }
-};
-int TF141::operatives = 140;
-int main() {
-    TF141 t1;
-    {
-        TF141 t2 = t1;
-        {
-            TF141 t3 = t2;
-        }
-    }
-    cout << " MISSION COMPLETE";
-    return 0;
-}
-What is the output?`, '141142143143142141 MISSION COMPLETE');
+  add('oneword', 'What is the output?\n\nstruct A {\n  int v;\n  A(int x) : v(x) {}\n  A operator-() const { return A(-v); }\n  A operator+(const A& o) const { return A(v + o.v); }\n  A operator-(const A& o) const { return A(v - o.v); }\n  friend ostream& operator<<(ostream& os, const A& a) { return os << a.v; }\n};\nint main() {\n  A a(5), b(3);\n  cout << -a + b - -b;\n}', '1');
 
-  console.log(`✅ Level 10: ${questions.length} questions prepared`);
-  console.log('\n💾 Seeding Level 10 questions to database...');
-  await adminService.seedQuestions(questions);
-  
-  console.log('\n🎉 Level 10 - OPERATION 141 seeding completed!');
-  console.log(`📊 Questions seeded: ${questions.length}`);
+  add('oneword', 'What is the output?\n\nclass Component {\npublic:\n  virtual int cost() = 0;\n  virtual ~Component() {}\n};\nclass Base : public Component {\npublic:\n  int cost() { return 100; }\n};\nclass Decorator : public Component {\nprotected:\n  Component* inner;\npublic:\n  Decorator(Component* c) : inner(c) {}\n  int cost() { return inner->cost(); }\n};\nclass GoldPlate : public Decorator {\npublic:\n  GoldPlate(Component* c) : Decorator(c) {}\n  int cost() { return inner->cost() + 50; }\n};\nclass Turbo : public Decorator {\npublic:\n  Turbo(Component* c) : Decorator(c) {}\n  int cost() { return inner->cost() + 200; }\n};\nint main() {\n  Component* item = new Turbo(new GoldPlate(new Base()));\n  cout << item->cost();\n}', '350');
 
+  add('oneword', 'What is the output?\n\nstruct A { int x = 1; virtual int get() { return x; } };\nstruct B : A { int x = 2; int get() { return x + A::x; } };\nstruct C : B { int x = 3; int get() { return x + B::x + A::x; } };\nint main() {\n  C c;\n  A* pa = &c;\n  B* pb = &c;\n  cout << pa->get() << pb->get() << c.get();\n}', '666');
+
+  add('oneword', 'What is the output?\n\nclass Composite {\n  int val;\n  Composite* children[5];\n  int count;\npublic:\n  Composite(int v) : val(v), count(0) {}\n  void add(Composite* c) { children[count++] = c; }\n  int total() {\n    int s = val;\n    for(int i=0;i<count;i++) s += children[i]->total();\n    return s;\n  }\n};\nint main() {\n  Composite root(1);\n  Composite a(2), b(3), c(4);\n  root.add(&a);\n  root.add(&b);\n  a.add(&c);\n  cout << root.total();\n}', '10');
+
+  add('oneword', 'What is the output?\n\nclass A {\n  int x;\npublic:\n  A(int v) : x(v) {}\n  A& operator+=(const A& o) { x += o.x; return *this; }\n  A& operator-=(const A& o) { x -= o.x; return *this; }\n  A& operator*=(int n) { x *= n; return *this; }\n  friend ostream& operator<<(ostream& os, const A& a) { return os << a.x; }\n};\nint main() {\n  A a(10), b(3);\n  (a += b) -= A(1);\n  a *= 2;\n  cout << a;\n}', '24');
+
+  add('oneword', 'What is the output?\n\nclass Flag {\n  bool state;\npublic:\n  Flag(bool s) : state(s) {}\n  Flag operator&&(const Flag& o) const { return Flag(state && o.state); }\n  Flag operator||(const Flag& o) const { return Flag(state || o.state); }\n  Flag operator!() const { return Flag(!state); }\n  operator bool() const { return state; }\n};\nint main() {\n  Flag a(true), b(false), c(true);\n  cout << (a && b) << (!b || c) << (a && !b && c);\n}', '011');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  A() { cout << "A"; }\n  A(const A&) { cout << "cA"; }\n  A& operator=(const A&) { cout << "=A"; return *this; }\n  virtual ~A() { cout << "~A"; }\n};\nclass B : public A {\n  A member;\npublic:\n  B() { cout << "B"; }\n  ~B() { cout << "~B"; }\n};\nint main() {\n  B b1;\n  B b2;\n  b2 = b1;\n  cout << "|";\n}', 'AABAB=A=A|~B~A~A~B~A~A');
+
+  add('oneword', 'What is the output?\n\nclass Interp {\npublic:\n  virtual int compute(int a, int b) = 0;\n  int run(int a, int b, int c) {\n    return compute(compute(a, b), c);\n  }\n  virtual ~Interp() {}\n};\nclass Sum : public Interp {\npublic:\n  int compute(int a, int b) { return a + b; }\n};\nclass Prod : public Interp {\npublic:\n  int compute(int a, int b) { return a * b; }\n};\nint main() {\n  Sum s;\n  Prod p;\n  cout << s.run(1, 2, 3) << p.run(1, 2, 3);\n}', '66');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  int x;\n  A(int v) : x(v) {}\n  virtual int compute() const { return x; }\n};\nclass B : public A {\npublic:\n  B(int v) : A(v) {}\n  int compute() const { return x * x; }\n};\nclass C : public B {\npublic:\n  C(int v) : B(v) {}\n  int compute() const { return x * x * x; }\n};\nint sumAll(const A* arr[], int n) {\n  int s = 0;\n  for(int i = 0; i < n; i++) s += arr[i]->compute();\n  return s;\n}\nint main() {\n  A a(2);\n  B b(2);\n  C c(2);\n  const A* arr[] = { &a, &b, &c };\n  cout << sumAll(arr, 3);\n}', '14');
+
+  add('oneword', 'What is the output?\n\nstruct Scope {\n  const char* name;\n  static int indent;\n  Scope(const char* n) : name(n) {\n    for(int i=0;i<indent;i++) cout << ".";\n    cout << name;\n    indent++;\n  }\n  ~Scope() {\n    indent--;\n  }\n};\nint Scope::indent = 0;\nvoid d() { Scope s("d"); }\nvoid c() { Scope s("c"); d(); }\nvoid b() { Scope s("b"); c(); }\nvoid a() { Scope s("a"); b(); }\nint main() { a(); }', 'a.b..c...d');
+
+  add('oneword', 'What is the output?\n\nclass FSM {\n  int state;\npublic:\n  FSM() : state(0) {}\n  void input(char c) {\n    switch(state) {\n      case 0: state = (c == \'a\') ? 1 : 0; break;\n      case 1: state = (c == \'b\') ? 2 : (c == \'a\') ? 1 : 0; break;\n      case 2: state = (c == \'c\') ? 3 : (c == \'a\') ? 1 : 0; break;\n      case 3: break;\n    }\n  }\n  bool accepted() { return state == 3; }\n};\nint main() {\n  FSM f;\n  const char* s = "aababc";\n  for(int i=0; s[i]; i++) f.input(s[i]);\n  cout << f.accepted();\n}', '1');
+
+  add('oneword', 'What is the output?\n\nclass Vec {\n  int* data;\n  int sz, cap;\npublic:\n  Vec() : data(new int[2]), sz(0), cap(2) {}\n  void push(int v) {\n    if(sz == cap) {\n      cap *= 2;\n      int* nd = new int[cap];\n      for(int i=0;i<sz;i++) nd[i] = data[i];\n      delete[] data;\n      data = nd;\n    }\n    data[sz++] = v;\n  }\n  int size() const { return sz; }\n  int capacity() const { return cap; }\n  ~Vec() { delete[] data; }\n};\nint main() {\n  Vec v;\n  for(int i=0;i<5;i++) v.push(i);\n  cout << v.size() << v.capacity();\n}', '58');
+
+  add('oneword', 'What is the output?\n\nclass Proxy {\n  int& ref;\npublic:\n  Proxy(int& r) : ref(r) {}\n  Proxy& operator=(int v) { ref = v; return *this; }\n  operator int() const { return ref; }\n};\nclass SmartArr {\n  int data[5] = {};\npublic:\n  Proxy operator[](int i) { return Proxy(data[i]); }\n};\nint main() {\n  SmartArr a;\n  a[2] = 42;\n  a[0] = a[2];\n  int x = a[0];\n  cout << x << (int)a[2];\n}', '4242');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  A() { cout << "A"; }\n  A(const A&) { cout << "cA"; }\n  virtual ~A() { cout << "~A"; }\n};\nclass B : virtual public A {\npublic:\n  B() { cout << "B"; }\n  ~B() { cout << "~B"; }\n};\nclass C : virtual public A {\n  B bMember;\npublic:\n  C() { cout << "C"; }\n  ~C() { cout << "~C"; }\n};\nclass D : public B, public C {\npublic:\n  D() { cout << "D"; }\n  ~D() { cout << "~D"; }\n};\nint main() { D d; }', 'ABABCD~D~C~B~A~B~A');
+
+  add('oneword', 'What is the output?\n\nclass Counter {\n  int n;\npublic:\n  Counter(int v) : n(v) {}\n  Counter operator--(int) { Counter tmp(*this); n--; return tmp; }\n  Counter& operator--() { n -= 2; return *this; }\n  int val() const { return n; }\n};\nint main() {\n  Counter c(20);\n  Counter a = c--;\n  --c;\n  Counter b = --(c--);\n  cout << a.val() << c.val() << b.val();\n}', '201517');
+
+  // ── 50 MORE LEVEL 10 QUESTIONS (IDs 1101–1150) ──
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  A() { cout << "A"; }\n  virtual ~A() { cout << "~A"; }\n};\nclass B : public A {\n  A m1;\npublic:\n  B() { cout << "B"; }\n  ~B() { cout << "~B"; }\n};\nclass C : public B {\n  A m2;\n  B m3;\npublic:\n  C() { cout << "C"; }\n  ~C() { cout << "~C"; }\n};\nint main() {\n  C* p = new C();\n  delete p;\n}', 'AABAAABABC~C~B~A~A~A~B~A~A');
+
+  add('oneword', 'What is the output?\n\nclass X {\n  int id;\n  static int counter;\npublic:\n  X() : id(++counter) { cout << "X" << id; }\n  X(const X& o) : id(++counter) { cout << "C" << id; }\n  ~X() { cout << "D" << id; }\n};\nint X::counter = 0;\nvoid foo(X x) {}\nint main() {\n  X a;\n  foo(a);\n  X b;\n  cout << "|";\n}', 'X1C2D2X3|D3D1');
+
+  add('oneword', 'What is the output?\n\nstruct A {\n  virtual int f() { return 1; }\n  int g() { return f() * 10; }\n};\nstruct B : A {\n  int f() { return 2; }\n  int g() { return f() * 100; }\n};\nstruct C : B {\n  int f() { return 3; }\n};\nint main() {\n  A* p = new C();\n  B* q = new C();\n  cout << p->g() << q->g();\n}', '30300');
+
+  add('oneword', 'What is the output?\n\nclass Track {\n  const char* tag;\npublic:\n  Track(const char* t) : tag(t) { cout << "+" << tag; }\n  Track(const Track& o) : tag(o.tag) { cout << "c" << tag; }\n  Track& operator=(const Track& o) { tag = o.tag; cout << "=" << tag; return *this; }\n  ~Track() { cout << "-" << tag; }\n};\nint main() {\n  Track a("a");\n  Track b("b");\n  Track c = a;\n  c = b;\n  cout << "|";\n}', '+a+bca=b|-b-b-a');
+
+  add('oneword', 'What is the output?\n\nclass A {\nprotected:\n  int x;\npublic:\n  A(int v) : x(v) { cout << "A" << x; }\n  virtual ~A() { cout << "~A"; }\n};\nclass B : virtual public A {\npublic:\n  B() : A(1) { cout << "B"; }\n  ~B() { cout << "~B"; }\n};\nclass C : virtual public A {\npublic:\n  C() : A(2) { cout << "C"; }\n  ~C() { cout << "~C"; }\n};\nclass D : public B, public C {\npublic:\n  D() : A(3) { cout << "D"; }\n  ~D() { cout << "~D"; }\n};\nint main() { D d; cout << d.x; }', 'A3BCD3~D~C~B~A');
+
+  add('oneword', 'What is the output?\n\nclass EventBus {\npublic:\n  struct Listener {\n    virtual void on(int code) = 0;\n    virtual ~Listener() {}\n  };\nprivate:\n  Listener* subs[10];\n  int count = 0;\npublic:\n  void add(Listener* l) { subs[count++] = l; }\n  void fire(int code) {\n    for(int i = 0; i < count; i++) subs[i]->on(code);\n  }\n};\nstruct Printer : EventBus::Listener {\n  int sum = 0;\n  void on(int code) { sum += code; }\n};\nstruct Counter : EventBus::Listener {\n  int n = 0;\n  void on(int code) { n++; }\n};\nint main() {\n  EventBus bus;\n  Printer p;\n  Counter c;\n  bus.add(&p); bus.add(&c);\n  bus.fire(5); bus.fire(10); bus.fire(3);\n  cout << p.sum << c.n;\n}', '183');
+
+  add('oneword', 'What is the output?\n\nclass Ref {\n  int& val;\npublic:\n  Ref(int& v) : val(v) {}\n  void inc() { val++; }\n  int get() const { return val; }\n};\nint main() {\n  int x = 10;\n  Ref r1(x), r2(x);\n  r1.inc();\n  r2.inc();\n  r1.inc();\n  cout << r1.get() << r2.get() << x;\n}', '131313');
+
+  add('oneword', 'What is the output?\n\nclass Lazy {\n  mutable int* cache = nullptr;\n  int seed;\npublic:\n  Lazy(int s) : seed(s) {}\n  int compute() const {\n    if(!cache) { cache = new int(seed * seed + 1); }\n    return *cache;\n  }\n  ~Lazy() { delete cache; }\n};\nint main() {\n  const Lazy a(5);\n  cout << a.compute() << a.compute();\n}', '2626');
+
+  add('oneword', 'Find the bug:\n\nclass Array {\n  int* data;\n  int sz;\npublic:\n  Array(int n) : sz(n), data(new int[n]()) {}\n  Array& operator=(Array other) {\n    int* tmp = data;\n    data = other.data;\n    sz = other.sz;\n    other.data = tmp;\n    other.sz = sz;\n    return *this;\n  }\n  ~Array() { delete[] data; }\n};', 'shallowcopy');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  virtual int val() const { return 1; }\n};\nclass B : public A {\npublic:\n  int val() const { return 2; }\n};\nclass C : public A {\npublic:\n  int val() const { return 3; }\n};\nclass D : public B {\npublic:\n  int val() const { return 4; }\n};\nint sumPoly(const A* arr[], int n) {\n  int s = 0;\n  for(int i = 0; i < n; i++) s += arr[i]->val();\n  return s;\n}\nint main() {\n  B b; C c; D d;\n  const A* arr[] = { &b, &c, &d };\n  cout << sumPoly(arr, 3);\n}', '9');
+
+  add('oneword', 'What is the output?\n\nclass RingBuffer {\n  int buf[4];\n  int head = 0, tail = 0, count = 0;\npublic:\n  void push(int v) {\n    buf[tail] = v;\n    tail = (tail + 1) % 4;\n    count++;\n  }\n  int pop() {\n    int v = buf[head];\n    head = (head + 1) % 4;\n    count--;\n    return v;\n  }\n};\nint main() {\n  RingBuffer rb;\n  rb.push(1); rb.push(2); rb.push(3);\n  cout << rb.pop();\n  rb.push(4); rb.push(5);\n  cout << rb.pop() << rb.pop();\n}', '123');
+
+  add('oneword', 'What is the output?\n\nstruct State {\n  enum Mode { OFF, ON, SLEEP };\n  Mode m = OFF;\n  void pressBtn() {\n    switch(m) {\n      case OFF: m = ON; cout << "on"; break;\n      case ON: m = SLEEP; cout << "sleep"; break;\n      case SLEEP: m = OFF; cout << "off"; break;\n    }\n  }\n};\nint main() {\n  State s;\n  s.pressBtn(); s.pressBtn(); s.pressBtn(); s.pressBtn();\n}', 'onsleepoffon');
+
+  add('oneword', 'What is the output?\n\nclass SmartPtr {\n  int* ptr;\npublic:\n  SmartPtr(int v) : ptr(new int(v)) {}\n  SmartPtr(SmartPtr&& o) noexcept : ptr(o.ptr) { o.ptr = nullptr; }\n  SmartPtr& operator=(SmartPtr&& o) noexcept {\n    delete ptr;\n    ptr = o.ptr;\n    o.ptr = nullptr;\n    return *this;\n  }\n  ~SmartPtr() { if(ptr) { cout << *ptr; delete ptr; } else { cout << "N"; } }\n  SmartPtr(const SmartPtr&) = delete;\n  SmartPtr& operator=(const SmartPtr&) = delete;\n};\nint main() {\n  SmartPtr a(10);\n  SmartPtr b(20);\n  b = std::move(a);\n  cout << "|";\n}', '20|N10');
+
+  add('oneword', 'What is the output?\n\nclass Base {\npublic:\n  virtual void step1() { cout << "B1"; }\n  virtual void step2() { cout << "B2"; }\n  void run() { step1(); cout << ">"; step2(); }\n};\nclass Mid : public Base {\npublic:\n  void step1() { cout << "M1"; }\n};\nclass Top : public Mid {\npublic:\n  void step2() { cout << "T2"; }\n};\nint main() {\n  Base* p = new Top();\n  p->run();\n}', 'M1>T2');
+
+  add('oneword', 'What is the output?\n\nclass Wrapper {\n  int* data;\n  int size;\npublic:\n  Wrapper(int s) : size(s), data(new int[s]) {\n    for(int i=0;i<s;i++) data[i] = i * i;\n  }\n  Wrapper(const Wrapper& o) : size(o.size), data(new int[o.size]) {\n    for(int i=0;i<size;i++) data[i] = o.data[i];\n    cout << "deep";\n  }\n  Wrapper(Wrapper&& o) noexcept : size(o.size), data(o.data) {\n    o.data = nullptr; o.size = 0;\n    cout << "move";\n  }\n  ~Wrapper() { delete[] data; }\n  int get(int i) const { return data[i]; }\n};\nint main() {\n  Wrapper a(3);\n  Wrapper b = std::move(a);\n  cout << b.get(2);\n}', 'move4');
+
+  add('oneword', 'What is the output?\n\nclass Matrix {\n  int rows, cols;\npublic:\n  Matrix(int r, int c) : rows(r), cols(c) {}\n  bool canMultiply(const Matrix& o) const { return cols == o.rows; }\n  Matrix multiply(const Matrix& o) const { return Matrix(rows, o.cols); }\n  void shape() const { cout << rows << "x" << cols; }\n};\nint main() {\n  Matrix a(2,3), b(3,5), c(5,1);\n  cout << a.canMultiply(b);\n  Matrix r = a.multiply(b).multiply(c);\n  r.shape();\n}', '12x1');
+
+  add('oneword', 'What is the output?\n\nclass Pool {\n  static int active;\n  int id;\npublic:\n  Pool() : id(++active) {}\n  Pool(const Pool&) : id(++active) {}\n  ~Pool() { active--; }\n  static int count() { return active; }\n  int getId() const { return id; }\n};\nint Pool::active = 0;\nint main() {\n  Pool a;\n  { Pool b(a); Pool c; cout << c.getId(); }\n  cout << Pool::count();\n  Pool d;\n  cout << d.getId();\n}', '312');
+
+  add('oneword', 'What is the output?\n\nclass Shape {\npublic:\n  virtual double area() const = 0;\n  virtual void scale(double f) = 0;\n  virtual ~Shape() {}\n};\nclass Circle : public Shape {\n  double r;\npublic:\n  Circle(double r) : r(r) {}\n  double area() const { return 3 * r * r; }\n  void scale(double f) { r *= f; }\n};\nclass ScaledShape : public Shape {\n  Shape& inner;\n  double factor;\npublic:\n  ScaledShape(Shape& s, double f) : inner(s), factor(f) {}\n  double area() const { return inner.area() * factor * factor; }\n  void scale(double f) { factor *= f; }\n};\nint main() {\n  Circle c(2);\n  ScaledShape ss(c, 3);\n  cout << ss.area();\n}', '108');
+
+  add('oneword', 'Find the bug:\n\nclass Node {\npublic:\n  int val;\n  Node* next;\n  Node(int v) : val(v), next(nullptr) {}\n};\nclass List {\n  Node* head;\npublic:\n  List() : head(nullptr) {}\n  void push(int v) {\n    Node* n = new Node(v);\n    n->next = head;\n    head = n;\n  }\n  ~List() {\n    while(head) {\n      head = head->next;\n      delete head;\n    }\n  }\n};', 'nodeleak');
+
+  add('oneword', 'What is the output?\n\nclass Cache {\n  mutable int data[3];\n  mutable bool valid = false;\n  int seed;\npublic:\n  Cache(int s) : seed(s) {}\n  void compute() const {\n    if(!valid) {\n      data[0] = seed;\n      data[1] = seed * 2;\n      data[2] = seed * 3;\n      valid = true;\n    }\n  }\n  int sum() const {\n    compute();\n    return data[0] + data[1] + data[2];\n  }\n};\nint main() {\n  const Cache c(5);\n  cout << c.sum() << c.sum();\n}', '3030');
+
+  add('oneword', 'What is the output?\n\nstruct Pair {\n  int a, b;\n  Pair(int x, int y) : a(x), b(y) {}\n  Pair swap() const { return Pair(b, a); }\n  Pair add(const Pair& o) const { return Pair(a+o.a, b+o.b); }\n  friend ostream& operator<<(ostream& os, const Pair& p) {\n    return os << "(" << p.a << "," << p.b << ")";\n  }\n};\nint main() {\n  Pair p(1, 2), q(3, 4);\n  cout << p.swap().add(q);\n}', '(5,5)');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  virtual void f() { cout << "A"; }\n  void g() { f(); }\n  virtual ~A() {}\n};\nclass B : public A {\npublic:\n  void f() { cout << "B"; A::f(); }\n};\nclass C : public B {\npublic:\n  void f() { cout << "C"; }\n};\nint main() {\n  A* p = new B();\n  p->g();\n  p = new C();\n  p->g();\n}', 'BAC');
+
+  add('oneword', 'What is the output?\n\nclass Indexed {\n  int data[5] = {10, 20, 30, 40, 50};\npublic:\n  int& operator[](int i) { return data[i]; }\n  const int& operator[](int i) const { return data[i]; }\n  int sum() const {\n    int s = 0;\n    for(int i=0;i<5;i++) s += (*this)[i];\n    return s;\n  }\n};\nint main() {\n  Indexed a;\n  a[2] = 100;\n  a[4] = 200;\n  cout << a.sum();\n}', '370');
+
+  add('oneword', 'What is the output?\n\nclass ListNode {\npublic:\n  int val;\n  ListNode* next;\n  ListNode(int v) : val(v), next(nullptr) {}\n};\nclass Iterator {\n  ListNode* cur;\npublic:\n  Iterator(ListNode* n) : cur(n) {}\n  int operator*() { return cur->val; }\n  Iterator& operator++() { cur = cur->next; return *this; }\n  bool operator!=(const Iterator& o) { return cur != o.cur; }\n};\nint main() {\n  ListNode a(1), b(2), c(3);\n  a.next = &b; b.next = &c;\n  for(Iterator it(&a); it != Iterator(nullptr); ++it)\n    cout << *it;\n}', '123');
+
+  add('oneword', 'What is the output?\n\nclass A {\n  int x;\npublic:\n  A(int v) : x(v) {}\n  virtual A* transform() {\n    x *= 2;\n    return this;\n  }\n  int getX() const { return x; }\n  virtual ~A() {}\n};\nclass B : public A {\npublic:\n  B(int v) : A(v) {}\n  B* transform() override {\n    A::transform();\n    return this;\n  }\n};\nclass C : public B {\npublic:\n  C(int v) : B(v) {}\n  C* transform() override {\n    B::transform();\n    B::transform();\n    return this;\n  }\n};\nint main() {\n  A* p = new C(1);\n  cout << p->transform()->getX();\n}', '4');
+
+  add('oneword', 'What is the output?\n\nclass Abstract {\npublic:\n  virtual void action() = 0;\n  void template_method() {\n    cout << "[";\n    action();\n    cout << "]";\n  }\n  virtual ~Abstract() {}\n};\nclass X : public Abstract {\npublic:\n  void action() { cout << "X"; }\n};\nclass Y : public Abstract {\npublic:\n  void action() { cout << "Y"; template_method(); }\n};\nclass Z : public Y {\npublic:\n  void action() { cout << "Z"; }\n};\nint main() {\n  Abstract* p = new Z();\n  p->template_method();\n}', '[Z]');
+
+  add('oneword', 'What is the output?\n\nclass UniqueId {\n  static int seq;\n  int id;\npublic:\n  UniqueId() : id(seq++) {}\n  UniqueId(const UniqueId&) : id(seq++) {}\n  UniqueId& operator=(const UniqueId&) { return *this; }\n  int get() const { return id; }\n};\nint UniqueId::seq = 100;\nint main() {\n  UniqueId a;\n  UniqueId b = a;\n  UniqueId c;\n  a = c;\n  cout << a.get() << b.get() << c.get();\n}', '100101102');
+
+  add('oneword', 'What is the output?\n\nclass Stack {\n  int data[10];\n  int top = -1;\npublic:\n  Stack& push(int v) { data[++top] = v; return *this; }\n  int pop() { return data[top--]; }\n  int peek() const { return data[top]; }\n  bool empty() const { return top < 0; }\n};\nint main() {\n  Stack s;\n  s.push(5).push(3).push(8);\n  cout << s.pop();\n  s.push(1);\n  cout << s.pop() << s.pop() << s.pop();\n}', '8135');
+
+  add('oneword', 'What is the output?\n\nclass Gen {\n  int v;\npublic:\n  Gen(int x) : v(x) {}\n  Gen next() const { return Gen(v + v % 3 + 1); }\n  int get() const { return v; }\n};\nint main() {\n  Gen g(1);\n  cout << g.get();\n  g = g.next();\n  cout << g.get();\n  g = g.next();\n  cout << g.get();\n  g = g.next();\n  cout << g.get();\n}', '1369');
+
+  add('oneword', 'What is the output?\n\nclass Mapper {\npublic:\n  virtual int map(int x) = 0;\n  void applyTo(int arr[], int n) {\n    for(int i=0;i<n;i++) arr[i] = map(arr[i]);\n  }\n  virtual ~Mapper() {}\n};\nclass Doubler : public Mapper {\npublic:\n  int map(int x) { return x * 2; }\n};\nclass Squarer : public Mapper {\npublic:\n  int map(int x) { return x * x; }\n};\nint main() {\n  int arr[] = {1, 2, 3};\n  Doubler d;\n  d.applyTo(arr, 3);\n  Squarer s;\n  s.applyTo(arr, 3);\n  for(int i=0;i<3;i++) cout << arr[i];\n}', '41636');
+
+  add('oneword', 'What is the output?\n\nstruct A {\n  A() { cout << "A"; }\n  A(const A&) { cout << "cA"; }\n  virtual ~A() { cout << "~A"; }\n};\nstruct B : A {\n  A member;\n  B() { cout << "B"; }\n  B(const B& o) : A(o), member(o.member) { cout << "cB"; }\n  ~B() { cout << "~B"; }\n};\nvoid consume(B b) { cout << "|"; }\nint main() {\n  B x;\n  consume(x);\n}', 'AABcAcAcB|~B~A~A~B~A~A');
+
+  add('oneword', 'What is the output?\n\nclass Callable {\npublic:\n  virtual int operator()(int x) = 0;\n  virtual ~Callable() {}\n};\nclass Square : public Callable {\npublic:\n  int operator()(int x) { return x * x; }\n};\nclass Negate : public Callable {\npublic:\n  int operator()(int x) { return -x; }\n};\nclass Compose : public Callable {\n  Callable &f, &g;\npublic:\n  Compose(Callable& a, Callable& b) : f(a), g(b) {}\n  int operator()(int x) { return f(g(x)); }\n};\nint main() {\n  Square sq;\n  Negate neg;\n  Compose c(neg, sq);\n  cout << c(3) << c(-2);\n}', '-9-4');
+
+  add('oneword', 'What is the output?\n\nclass A {\nprotected:\n  int x;\npublic:\n  A(int v) : x(v) {}\n  A(const A& o) : x(o.x + 1) { cout << "cA" << x; }\n};\nclass B : public A {\n  int y;\npublic:\n  B(int a, int b) : A(a), y(b) {}\n  B(const B& o) : A(o), y(o.y + 1) { cout << "cB" << y; }\n  void show() { cout << x << y; }\n};\nint main() {\n  B b1(10, 20);\n  B b2 = b1;\n  b2.show();\n}', 'cA11cB211121');
+
+  add('oneword', 'Find the bug:\n\nclass StrBuffer {\n  char* buf;\n  int len;\npublic:\n  StrBuffer(const char* s) {\n    len = 0;\n    while(s[len]) len++;\n    buf = new char[len];\n    for(int i=0;i<len;i++) buf[i] = s[i];\n  }\n  void print() { for(int i=0;i<len;i++) cout << buf[i]; }\n  ~StrBuffer() { delete[] buf; }\n};', 'missingnull');
+
+  add('oneword', 'What is the output?\n\nclass Config {\n  int settings[3];\npublic:\n  Config() : settings{0, 0, 0} {}\n  Config& set(int idx, int val) { settings[idx] = val; return *this; }\n  int total() const {\n    int s = 0;\n    for(int i=0;i<3;i++) s += settings[i];\n    return s;\n  }\n};\nint main() {\n  Config c;\n  cout << c.set(0, 10).set(1, 20).set(2, 30).total();\n  Config d = c;\n  d.set(0, 100);\n  cout << c.total() << d.total();\n}', '6060150');
+
+  add('oneword', 'What is the output?\n\nclass Pipeline {\npublic:\n  virtual int process(int x) const = 0;\n  virtual ~Pipeline() {}\n};\nclass AddPipe : public Pipeline {\n  int n;\npublic:\n  AddPipe(int v) : n(v) {}\n  int process(int x) const { return x + n; }\n};\nclass MulPipe : public Pipeline {\n  int n;\npublic:\n  MulPipe(int v) : n(v) {}\n  int process(int x) const { return x * n; }\n};\nclass Chain : public Pipeline {\n  const Pipeline &a, &b;\npublic:\n  Chain(const Pipeline& x, const Pipeline& y) : a(x), b(y) {}\n  int process(int x) const { return b.process(a.process(x)); }\n};\nint main() {\n  AddPipe add5(5);\n  MulPipe mul3(3);\n  Chain c1(add5, mul3);\n  Chain c2(mul3, add5);\n  cout << c1.process(2) << c2.process(2);\n}', '2111');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  A() { cout << "A"; }\n  A(const A&) = delete;\n  A(A&&) { cout << "M"; }\n  ~A() { cout << "~A"; }\n};\nint main() {\n  A a;\n  A b = std::move(a);\n  cout << "|";\n}', 'AM|~A~A');
+
+  add('oneword', 'What is the output?\n\nclass Histogram {\n  int bins[5] = {};\npublic:\n  void add(int v) { if(v >= 0 && v < 5) bins[v]++; }\n  int max() const {\n    int m = bins[0];\n    for(int i=1;i<5;i++) if(bins[i] > m) m = bins[i];\n    return m;\n  }\n  int at(int i) const { return bins[i]; }\n};\nint main() {\n  Histogram h;\n  int data[] = {1, 3, 1, 2, 1, 3, 4, 1};\n  for(int d : data) h.add(d);\n  cout << h.max() << h.at(1) << h.at(3);\n}', '442');
+
+  add('oneword', 'What is the output?\n\nclass Guard {\n  static int depth;\n  const char* fn;\npublic:\n  Guard(const char* f) : fn(f) {\n    depth++;\n    for(int i=1;i<depth;i++) cout << " ";\n    cout << fn << "\\n";\n  }\n  ~Guard() { depth--; }\n};\nint Guard::depth = 0;\nvoid c() { Guard g("c"); }\nvoid b() { Guard g("b"); c(); c(); }\nvoid a() { Guard g("a"); b(); }\nint main() { a(); }', 'abcc');
+
+  add('oneword', 'What is the output?\n\nclass Token {\n  int val;\npublic:\n  Token(int v) : val(v) {}\n  Token operator+(const Token& o) const { return Token(val + o.val); }\n  Token operator*(const Token& o) const { return Token(val * o.val); }\n  bool operator==(int n) const { return val == n; }\n  friend ostream& operator<<(ostream& os, const Token& t) { return os << t.val; }\n};\nint main() {\n  Token a(2), b(3), c(4);\n  cout << a * b + c;\n  cout << a + b * c;\n}', '1014');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  int x;\n  A(int v) : x(v) {}\n  virtual A& inc() { x++; return *this; }\n  virtual ~A() {}\n};\nclass B : public A {\npublic:\n  int y;\n  B(int a, int b) : A(a), y(b) {}\n  B& inc() override { x += 10; y += 10; return *this; }\n};\nint main() {\n  B b(1, 2);\n  A& ref = b;\n  ref.inc().inc();\n  cout << b.x << b.y;\n}', '2122');
+
+  add('oneword', 'What is the output?\n\nclass Validator {\npublic:\n  virtual bool check(int v) const = 0;\n  virtual ~Validator() {}\n};\nclass Range : public Validator {\n  int lo, hi;\npublic:\n  Range(int a, int b) : lo(a), hi(b) {}\n  bool check(int v) const { return v >= lo && v <= hi; }\n};\nclass Not : public Validator {\n  const Validator& inner;\npublic:\n  Not(const Validator& v) : inner(v) {}\n  bool check(int v) const { return !inner.check(v); }\n};\nclass And : public Validator {\n  const Validator &a, &b;\npublic:\n  And(const Validator& x, const Validator& y) : a(x), b(y) {}\n  bool check(int v) const { return a.check(v) && b.check(v); }\n};\nint main() {\n  Range r1(1, 10), r2(5, 15);\n  And both(r1, r2);\n  Not notR1(r1);\n  cout << both.check(7) << both.check(12) << notR1.check(3) << notR1.check(15);\n}', '1001');
+
+  add('oneword', 'What is the output?\n\nclass Tracker {\n  static int total;\n  int val;\npublic:\n  Tracker(int v) : val(v) { total += v; }\n  Tracker(const Tracker& o) : val(o.val) { total += val; }\n  Tracker(Tracker&& o) noexcept : val(o.val) { o.val = 0; total += val; }\n  ~Tracker() { total -= val; }\n  static int getTotal() { return total; }\n};\nint Tracker::total = 0;\nint main() {\n  Tracker a(5);\n  Tracker b(std::move(a));\n  cout << Tracker::getTotal();\n  { Tracker c(3); cout << Tracker::getTotal(); }\n  cout << Tracker::getTotal();\n}', '101310');
+
+  add('oneword', 'What is the output?\n\nclass A {\npublic:\n  virtual int f(int x) const { return x; }\n  int apply(int x) const { return f(f(x)); }\n};\nclass B : public A {\npublic:\n  int f(int x) const { return x + 3; }\n};\nclass C : public B {\npublic:\n  int f(int x) const { return x * 2; }\n};\nint main() {\n  A a; B b; C c;\n  cout << a.apply(1) << b.apply(1) << c.apply(1);\n}', '174');
+
+  add('oneword', 'What is the output?\n\nstruct Pair {\n  int first, second;\n  Pair(int a, int b) : first(a), second(b) {}\n  bool operator<(const Pair& o) const {\n    if(first != o.first) return first < o.first;\n    return second < o.second;\n  }\n};\nvoid sort3(Pair arr[]) {\n  for(int i=0;i<2;i++)\n    for(int j=0;j<2-i;j++)\n      if(arr[j+1] < arr[j]) { Pair t=arr[j]; arr[j]=arr[j+1]; arr[j+1]=t; }\n}\nint main() {\n  Pair arr[] = { {2,3}, {1,5}, {2,1} };\n  sort3(arr);\n  for(int i=0;i<3;i++) cout << arr[i].first << arr[i].second;\n}', '152123');
+
+  add('oneword', 'What is the output?\n\nclass Adaptor {\npublic:\n  virtual int convert(int x) const = 0;\n  virtual ~Adaptor() {}\n};\nclass Celsius : public Adaptor {\npublic:\n  int convert(int f) const { return (f - 32) * 5 / 9; }\n};\nclass Kelvin : public Adaptor {\npublic:\n  int convert(int f) const { return (f - 32) * 5 / 9 + 273; }\n};\nint main() {\n  Celsius c;\n  Kelvin k;\n  const Adaptor* arr[] = { &c, &k };\n  cout << arr[1]->convert(212);\n}', '373');
+
+  add('oneword', 'What is the output?\n\nclass Emitter {\n  int count = 0;\npublic:\n  void emit() { count++; }\n  int getCount() const { return count; }\n};\nclass Widget {\n  Emitter onClick;\n  Emitter onHover;\npublic:\n  void click() { onClick.emit(); onClick.emit(); }\n  void hover() { onHover.emit(); }\n  int totalEvents() const { return onClick.getCount() + onHover.getCount(); }\n};\nint main() {\n  Widget w;\n  w.click(); w.hover(); w.click(); w.hover(); w.hover();\n  cout << w.totalEvents();\n}', '7');
+
+  add('oneword', 'What is the output?\n\nclass A {\nprotected:\n  int v;\npublic:\n  A(int x) : v(x) {}\n  virtual void chain() { cout << v; }\n};\nclass B : public A {\npublic:\n  B(int x) : A(x) {}\n  void chain() { cout << v * 2; A::chain(); }\n};\nclass C : public B {\npublic:\n  C(int x) : B(x) {}\n  void chain() { cout << v * 3; B::chain(); }\n};\nint main() {\n  A* p = new C(2);\n  p->chain();\n}', '642');
+
+  add('oneword', 'Find the bug:\n\nclass Singleton {\n  static Singleton* instance;\n  int value;\n  Singleton(int v) : value(v) {}\npublic:\n  static Singleton& get() {\n    if(!instance) instance = new Singleton(0);\n    return *instance;\n  }\n  void set(int v) { value = v; }\n  int getVal() const { return value; }\n  ~Singleton() { instance = nullptr; }\n};', 'memoryleak');
+
+  add('oneword', 'What is the output?\n\nclass SafeDiv {\n  int num, den;\npublic:\n  SafeDiv(int n, int d) : num(n), den(d) {}\n  SafeDiv operator/(const SafeDiv& o) const {\n    return SafeDiv(num * o.den, den * o.num);\n  }\n  friend ostream& operator<<(ostream& os, const SafeDiv& f) {\n    return os << f.num << "/" << f.den;\n  }\n};\nint main() {\n  SafeDiv a(1, 2), b(3, 4);\n  cout << a / b;\n}', '4/6');
+
+  await adminService.seedQuestionsForLevel(level, questions);
+  console.log('Level 10 seeded with 150 ultimate expert questions!');
   await app.close();
 }
 
-bootstrap().catch(err => {
-  console.error('❌ Seeding failed:', err);
-  process.exit(1);
-});
+bootstrap().catch(console.error);

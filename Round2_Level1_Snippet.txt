@@ -1,0 +1,42 @@
+ROUND 2 LEVEL 1 - CHECKPOINT NAVIGATION SNIPPET
+==============================================
+
+#include <iostream>
+#include "Tank.h"
+
+class MyTank : public Tank {
+private:
+    int checkpointIndex = 0;  // Tracks which checkpoint we're aiming for (0, 1, or 2)
+    const int checkpoints[3] = {20, 50, 80};  // 3 checkpoint positions on the Y-axis
+
+public:
+    void move() override {
+        int targetY = checkpoints[checkpointIndex];  // Get the Y position of current checkpoint
+        
+        // Check if tank is ABOVE the target (more than 2 units higher)
+        if (this->y < targetY - 2) {
+            moveDown();  // Move DOWN towards the checkpoint
+        } 
+        // Check if tank is BELOW the target (more than 2 units lower)
+        else if (this->y > targetY + 2) {
+            moveUp();  // Move UP towards the checkpoint
+        }
+        
+        // Check if tank REACHED the checkpoint (within 2 units tolerance)
+        if (abs(this->y - targetY) <= 2) {
+            checkpointIndex++;  // Advance to next checkpoint
+            // Reset to first checkpoint after visiting all 3
+            if (checkpointIndex >= 3) checkpointIndex = 0;
+        }
+    }
+
+    void attack() override { }  // Not used in Level 1 (movement only)
+    void defend() override { }  // Not used in Level 1 (movement only)
+};
+
+EXPLANATION:
+- this->y < targetY - 2 → Tank is MORE than 2 units ABOVE target → Move DOWN
+- this->y > targetY + 2 → Tank is MORE than 2 units BELOW target → Move UP
+- abs(this->y - targetY) <= 2 → Tank is CLOSE ENOUGH to checkpoint → Advance to next one
+- checkpointIndex++ → Move to next checkpoint (20 → 50 → 80)
+- checkpointIndex = 0 → After all 3 visited, cycle back to first checkpoint
