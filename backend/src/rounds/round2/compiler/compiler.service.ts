@@ -4,14 +4,15 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CompilerService {
-  private readonly PISTON_EXECUTE_URL =
-    process.env.PISTON_EXECUTE_URL || 'https://emkc.org/api/v2/piston/execute';
+  private readonly JDOODLE_API_URL = 'https://api.jdoodle.com/v1/execute';
+  private readonly JDOODLE_CLIENT_ID = process.env.JDOODLE_CLIENT_ID || 'e384e34b4e193ec943835f806e1e21cc';
+  private readonly JDOODLE_CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET || '71abd256a893e05c37f0644d9cba89814f88c54a32ec66eb0dcffff3f64c0d09';
 
   constructor(private readonly httpService: HttpService) {}
 
   async compileCode(code: string, level: number): Promise<{ success: boolean; output?: string; error?: string }> {
     console.log(`[Level ${level}] Compiling code...`);
-    console.log('Using Piston API at:', this.PISTON_EXECUTE_URL);
+    console.log('Using JDoodle API');
 
     // Remove the fake include so it compiles cleanly in Piston
     const cleanCode = code.replace('#include "Tank.h"', '');
@@ -156,41 +157,48 @@ int main() {
 `;
     }
 
-    // --- REAL COMPILER (Piston API) ---
+    // --- REAL COMPILER (JDoodle API) ---
     try {
-      console.log('Sending request to Piston API...');
+      console.log('Sending request to JDoodle API...');
 
       const response = await firstValueFrom(
-        this.httpService.post(this.PISTON_EXECUTE_URL, {
-          language: 'cpp',
-          version: '10.2.0',
-          files: [{ content: cppWrapper }],
+        this.httpService.post(this.JDOODLE_API_URL, {
+          clientId: this.JDOODLE_CLIENT_ID,
+          clientSecret: this.JDOODLE_CLIENT_SECRET,
+          script: cppWrapper,
+          language: 'cpp17',
+          versionIndex: '0',
         })
       );
 
-      console.log('Received response from Piston API');
+      console.log('Received response from JDoodle API');
       const result = response.data;
 
-      if (result.run && result.run.code === 0) {
+      // JDoodle returns: { output, statusCode, memory, cpuTime }
+      // statusCode 200 means successful execution
+      if (result.statusCode === 200 || (!result.error && result.output !== undefined)) {
+        // Check if output contains compilation errors
+        const output = result.output || '';
+        if (output.includes('error:') || output.includes('Error:')) {
+          console.error('Compilation Error:', output);
+          return { success: false, error: output };
+        }
+
         console.log('Compilation successful');
-        console.log('Output:', result.run.stdout);
+        console.log('Output:', output);
 
         // Parse the actual output to derive a real profile instead of the template
-        const stdout = result.run.stdout;
-        const profile = this.deriveProfile(stdout, level);
-        const finalOutput = profile ? `${stdout}\n${profile}` : stdout;
+        const profile = this.deriveProfile(output, level);
+        const finalOutput = profile ? `${output}\n${profile}` : output;
 
         return { success: true, output: finalOutput };
       } else {
-        const errorMsg =
-          (result.compile && result.compile.stderr) ||
-          (result.run && result.run.stderr) ||
-          'Unknown Compilation Error';
+        const errorMsg = result.error || result.output || 'Unknown Compilation Error';
         console.error('Compilation Error:', errorMsg);
         return { success: false, error: errorMsg };
       }
     } catch (error) {
-      console.error('Piston API Error:', error.message);
+      console.error('JDoodle API Error:', error.message);
       if (error.response) {
         console.error('Response status:', error.response.status);
         console.error('Response data:', error.response.data);
