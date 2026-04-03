@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, RotateCcw, Shield, Target, Zap, AlertTriangle, Code2, Cpu, AlertCircle, CheckCircle, Crosshair } from 'lucide-react';
+import { ArrowLeft, Play, RotateCcw, Shield, Target, Zap, AlertTriangle, Code2, Cpu, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalBackground from '../../components/TacticalBackground';
 import api from '../../api/axios';
@@ -61,29 +61,120 @@ interface GameState {
   targetsDestroyed?: number;
 }
 
-const defaultCode = `#include <iostream>
+const getLevelCode = (level: number): string => {
+  if (level === 1) {
+    return `#include <iostream>
+#include "Tank.h"
+
+class MyTank : public Tank {
+private:
+    int checkpointIndex = 0;
+    const int checkpoints[3] = {20, 50, 80};
+
+public:
+    void move() override {
+        int targetY = checkpoints[checkpointIndex];
+
+        // WRITE YOUR CODE HERE
+        // Use this->y to get your current position
+        // Call moveUp() to decrease Y (move up)
+        // Call moveDown() to increase Y (move down)
+        // Navigate to all 3 checkpoints at Y: 20, 50, 80
+
+        if (this->y < targetY - 2) {
+            moveDown();
+        } else if (this->y > targetY + 2) {
+            moveUp();
+        }
+
+        // Don't modify below - checkpoint tracking
+        if (abs(this->y - targetY) <= 2) {
+            checkpointIndex++;
+            if (checkpointIndex >= 3) checkpointIndex = 0;
+        }
+    }
+
+    void attack() override {
+        // No firing in Level 1
+    }
+
+    void defend() override {
+        // No defense in Level 1
+    }
+};`;
+  } else if (level === 2) {
+    return `#include <iostream>
 #include "Tank.h"
 
 class MyTank : public Tank {
 public:
     void move() override {
-        // LEVEL 1: Learn movement
-        // Move your tank to reach checkpoints
-        if (this->y < 50) {
-            moveDown();  // Move towards target
-        } else {
-            moveUp();    // Or move up
+        // WRITE YOUR CODE HERE
+        // enemy.y gives you the target's position
+        // Move your tank to align with the target
+
+        if (this->y < enemy.y - 2) {
+            moveDown();
+        } else if (this->y > enemy.y + 2) {
+            moveUp();
         }
     }
 
     void attack() override {
-        // You'll learn firing in Level 2
+        // WRITE YOUR CODE HERE
+        // Call fire() to shoot when aligned with target
+        // abs(this->y - enemy.y) gives distance to target
+
+        if (abs(this->y - enemy.y) < 10) {
+            fire();
+        }
     }
 
     void defend() override {
-        // You'll learn defense in Level 3
+        // No defense in Level 2
     }
 };`;
+  } else {
+    return `#include <iostream>
+#include "Tank.h"
+
+class MyTank : public Tank {
+public:
+    void move() override {
+        // WRITE YOUR CODE HERE
+        // enemy.y gives the enemy tank's position
+        // Track the enemy to stay aligned
+
+        if (this->y < enemy.y - 2) {
+            moveDown();
+        } else if (this->y > enemy.y + 2) {
+            moveUp();
+        }
+    }
+
+    void attack() override {
+        // WRITE YOUR CODE HERE
+        // Call fire() when aligned with enemy
+        // Wider range is OK in Level 3 (14 units)
+
+        if (abs(this->y - enemy.y) < 14) {
+            fire();
+        }
+    }
+
+    void defend() override {
+        // WRITE YOUR CODE HERE
+        // Call activateShield() to block enemy fire
+        // enemy.isFiring() tells you if enemy is shooting
+        // this->hp gives your current health
+
+        if (enemy.isFiring() || this->hp < 40) {
+            activateShield();
+        }
+    }
+};`;
+  }
+};
 
 // Decorative HUD Corners Component
 const HudCorners = ({ size = 'lg' }: { size?: 'sm' | 'lg' }) => {
@@ -232,40 +323,6 @@ const BriefingScreen = ({ onStart }: { onStart: () => void }) => {
         </div>
       </div>
 
-      <style jsx>{`
-        .cyber-red { color: #ff003c; }
-        .bg-cyber-red { background-color: #ff003c; }
-        .text-cyber-red { color: #ff003c; }
-        .text-glow { text-shadow: 0 0 8px currentColor, 0 0 16px currentColor; }
-        .box-glow { box-shadow: 0 0 30px rgba(57,255,20,0.2), inset 0 0 20px rgba(57,255,20,0.05); }
-        .shimmer { animation: shimmer 3s infinite; }
-        @keyframes shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.98; } }
-        .breathe-glow { animation: breathe 4s infinite; }
-        @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .scanlines::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(57,255,20,0.03) 2px,
-            rgba(57,255,20,0.03) 4px
-          );
-          pointer-events: none;
-          z-index: 1;
-        }
-        .crt-flicker { animation: flicker 0.15s infinite; }
-        @keyframes flicker {
-          0% { opacity: 0.98; }
-          50% { opacity: 1; }
-          100% { opacity: 0.98; }
-        }
-      `}</style>
     </div>
   );
 };
@@ -279,8 +336,9 @@ export default function Round2() {
       return true;
     }
   });
-  const [code, setCode] = useState(defaultCode);
+  const [code, setCode] = useState(() => getLevelCode(1));
   const [battleLog, setBattleLog] = useState('> READY TO DEPLOY');
+  const [explosions, setExplosions] = useState<Array<{x: number, y: number, id: number}>>([]);
   const [compiling, setCompiling] = useState(false);
   const [compileStatus, setCompileStatus] = useState('');
   const [levelComplete, setLevelComplete] = useState(false);
@@ -366,6 +424,7 @@ export default function Round2() {
       return newState;
     });
     setLevelComplete(false);
+    setExplosions([]);
   }, [log]);
 
   // Calculate level-specific game logic (pure function)
@@ -373,7 +432,15 @@ export default function Round2() {
     gameStateSnapshot: GameState,
     dt: number
   ) => {
-    const newState = { ...gameStateSnapshot };
+    // Deep clone to avoid mutating React state
+    const newState: GameState = {
+      ...gameStateSnapshot,
+      player: { ...gameStateSnapshot.player },
+      enemy: { ...gameStateSnapshot.enemy },
+      projectiles: gameStateSnapshot.projectiles.map(p => ({ ...p })),
+      checkpoints: gameStateSnapshot.checkpoints?.map(cp => ({ ...cp })),
+      targets: gameStateSnapshot.targets?.map(t => ({ ...t })),
+    };
     enemyTimeRef.current += dt;
 
     if (gameStateSnapshot.level === 1) {
@@ -469,43 +536,33 @@ export default function Round2() {
       let newState = calculateLevelLogic(prev, dt);
       const playerMoveSpeed = 60;
 
-      // DEBUG: Log Level 1 checkpoint status periodically
-      if (prev.level === 1) {
-        const checkpoint = prev.checkpoints?.[prev.currentCheckpoint];
-        if (checkpoint && Math.random() < 0.01) {  // ~1% of frames (roughly every 100ms at 60fps)
-          const distance = Math.abs(prev.player.y - checkpoint.y);
-          console.log(`[L1-DEBUG] CP${prev.currentCheckpoint! + 1}: Y=${Math.round(prev.player.y)}, Target=${checkpoint.y}, Dist=${Math.round(distance)}, Mode=${prev.playerStrategy.moveMode}`);
-        }
-      }
-
       // ===== PLAYER MOVEMENT =====
+      // Use newState (not prev) for checkpoint/target/enemy targeting
+      // to avoid one-frame delay when switching targets after visitation
       if (prev.playerStrategy.moveMode === 'track') {
-        const playerMoveSpeed = 60;
-        
         if (prev.level === 1) {
-          // LEVEL 1: Track checkpoint, not enemy
-          const checkpoint = prev.checkpoints?.[prev.currentCheckpoint!];
-          if (checkpoint) {
-            const diff = checkpoint.y - prev.player.y;
-            // Always move if not at checkpoint (increased threshold from 1.5 to 2.0)
+          // LEVEL 1: Track checkpoint
+          const checkpoint = newState.checkpoints?.[newState.currentCheckpoint!];
+          if (checkpoint && !checkpoint.visited) {
+            const diff = checkpoint.y - newState.player.y;
             if (Math.abs(diff) > 2.0) {
               newState.player.y += Math.sign(diff) * playerMoveSpeed * dt;
             }
           }
         } else if (prev.level === 2) {
-          // LEVEL 2: Track closest active target (not enemy.y which stays at 50)
-          const activeTargets = prev.targets?.filter(t => t.active) || [];
+          // LEVEL 2: Track closest active target
+          const activeTargets = newState.targets?.filter(t => t.active) || [];
           const closestTarget = activeTargets
-            .sort((a, b) => Math.abs(a.y - prev.player.y) - Math.abs(b.y - prev.player.y))[0];
+            .sort((a, b) => Math.abs(a.y - newState.player.y) - Math.abs(b.y - newState.player.y))[0];
           if (closestTarget) {
-            const diff = closestTarget.y - prev.player.y;
+            const diff = closestTarget.y - newState.player.y;
             if (Math.abs(diff) > 1.5) {
               newState.player.y += Math.sign(diff) * playerMoveSpeed * dt;
             }
           }
         } else {
           // LEVEL 3: Track enemy
-          const diff = prev.enemy.y - prev.player.y;
+          const diff = newState.enemy.y - newState.player.y;
           if (Math.abs(diff) > 1.5) {
             newState.player.y += Math.sign(diff) * playerMoveSpeed * dt;
           }
@@ -526,17 +583,17 @@ export default function Round2() {
       if (prev.playerStrategy.fireMode === 'always') {
         shouldFire = true;
       } else if (prev.playerStrategy.fireMode === 'align') {
-        if (prev.level === 3) {
+        if (newState.level === 3) {
           // Fire when aligned with enemy
-          if (Math.abs(prev.enemy.y - prev.player.y) < 14) {
+          if (Math.abs(newState.enemy.y - newState.player.y) < 14) {
             shouldFire = true;
           }
-        } else if (prev.level === 2) {
+        } else if (newState.level === 2) {
           // Fire when aligned with any target
           const closestTarget = newState.targets
             .filter(t => t.active)
-            .sort((a, b) => Math.abs(a.y - prev.player.y) - Math.abs(b.y - prev.player.y))[0];
-          if (closestTarget && Math.abs(closestTarget.y - prev.player.y) < 10) {
+            .sort((a, b) => Math.abs(a.y - newState.player.y) - Math.abs(b.y - newState.player.y))[0];
+          if (closestTarget && Math.abs(closestTarget.y - newState.player.y) < 10) {
             shouldFire = true;
           }
         }
@@ -552,11 +609,11 @@ export default function Round2() {
       }
 
       // ===== PLAYER SHIELD (Level 3) =====
-      if (prev.playerStrategy.shieldMode === 'smart' && prev.level === 3) {
+      if (prev.playerStrategy.shieldMode === 'smart' && newState.level === 3) {
         // Auto-activate shield when enemy projectile is incoming
-        if (!prev.player.shieldActive && prev.player.shieldCount < 2) {
-          const incomingProjectile = prev.projectiles.find(p =>
-            !p.isPlayer && p.x <= 35 && Math.abs(p.y - prev.player.y) < 15
+        if (!newState.player.shieldActive && newState.player.shieldCount < 2) {
+          const incomingProjectile = newState.projectiles.find(p =>
+            !p.isPlayer && p.x <= 35 && Math.abs(p.y - newState.player.y) < 15
           );
           if (incomingProjectile) {
             newState.player.shieldActive = true;
@@ -566,8 +623,8 @@ export default function Round2() {
           }
         }
         // Frame-based shield countdown
-        if (prev.player.shieldActive && prev.player.shieldTimer > 0) {
-          newState.player.shieldTimer = prev.player.shieldTimer - dt;
+        if (newState.player.shieldActive && newState.player.shieldTimer > 0) {
+          newState.player.shieldTimer = newState.player.shieldTimer - dt;
           if (newState.player.shieldTimer <= 0) {
             newState.player.shieldActive = false;
             newState.player.shieldTimer = 0;
@@ -588,10 +645,15 @@ export default function Round2() {
               return false;
             } else if (prev.level === 2) {
               // Level 2: Check hit on targets
-              const hitTarget = newState.targets.find(t => 
+              const hitTarget = newState.targets.find(t =>
                 t.active && p.x >= 65 && p.x <= 75 && Math.abs(p.y - t.y) < 8
               );
               if (hitTarget) {
+                const expId = Date.now() + Math.random();
+                setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                setTimeout(() => {
+                  setExplosions(prev => prev.filter(e => e.id !== expId));
+                }, 500);
                 hitTarget.active = false;
                 newState.targetsDestroyed += 1;
                 log(`TARGET ${hitTarget.id} DESTROYED (${newState.targetsDestroyed}/3)`);
@@ -606,6 +668,11 @@ export default function Round2() {
               // Level 3: Check hit on enemy
               const hitEnemy = p.x >= 80 && p.x <= 100 && Math.abs(p.y - newState.enemy.y) < 14;
               if (hitEnemy) {
+                const expId = Date.now() + Math.random();
+                setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                setTimeout(() => {
+                  setExplosions(prev => prev.filter(e => e.id !== expId));
+                }, 500);
                 if (!newState.enemy.shieldActive) {
                   newState.enemy.hp -= 10;
                   log(`HIT! Enemy HP: ${Math.max(0, newState.enemy.hp)}%`);
@@ -624,6 +691,11 @@ export default function Round2() {
                   log("YOUR SHIELD BLOCKED!");
                   return false;
                 }
+                const expId = Date.now() + Math.random();
+                setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                setTimeout(() => {
+                  setExplosions(prev => prev.filter(e => e.id !== expId));
+                }, 500);
                 newState.player.hp -= 10;
                 return false;
               }
@@ -754,10 +826,12 @@ export default function Round2() {
 
   const nextLevel = () => {
     if (gameState.level < gameState.maxLevel) {
-      setGameState(prev => ({ ...prev, level: prev.level + 1 }));
+      const newLevel = gameState.level + 1;
+      setGameState(prev => ({ ...prev, level: newLevel }));
+      setCode(getLevelCode(newLevel));
       setLevelComplete(false);
       resetGame();
-      log(`LEVEL ${gameState.level + 1} READY. DEPLOY CODE.`);
+      log(`LEVEL ${newLevel} READY. WRITE CODE AND DEPLOY.`);
     }
   };
 
@@ -869,7 +943,7 @@ export default function Round2() {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-center border border-cyber-red/50 bg-[#010301]/90 p-8 rounded"
+              className="text-center border border-[#ff003c]/50 bg-[#010301]/90 p-8 rounded"
             >
               <motion.div
                 animate={{ rotate: 360 }}
@@ -904,7 +978,7 @@ export default function Round2() {
             </button>
 
             <div className="flex items-center gap-6">
-              <div className="text-center px-6 py-3 border border-cyber-red/40 bg-cyber-red/5">
+              <div className="text-center px-6 py-3 border border-[#ff003c]/40 bg-[#ff003c]/5">
                 <div className="text-xs text-cyber-red/60 tracking-widest mb-1">LEVEL</div>
                 <LevelBadge level={gameState.level} maxLevel={gameState.maxLevel} />
               </div>
@@ -935,22 +1009,43 @@ export default function Round2() {
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#39ff14] to-transparent" />
               <HudCorners size="sm" />
 
-              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-[#39ff14]/20">
-                <Code2 className="w-5 h-5 text-cyber-red" />
-                <h2 className="text-sm font-bold tracking-[0.2em] text-cyber-red">CODE DEPLOYMENT</h2>
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#39ff14]/20">
+                <div className="flex items-center gap-2">
+                  <Code2 className="w-5 h-5 text-cyber-red" />
+                  <h2 className="text-sm font-bold tracking-[0.2em] text-cyber-red">CODE DEPLOYMENT</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[#39ff14]/50">LVL {gameState.level}</span>
+                  <button
+                    onClick={() => setCode(getLevelCode(gameState.level))}
+                    className="text-xs px-2 py-1 border border-[#39ff14]/40 text-[#39ff14] hover:bg-[#39ff14]/10 flex items-center gap-1 transition-all"
+                    title="Reset to starter code"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    RESET
+                  </button>
+                </div>
+              </div>
+
+              {/* Level Objective Banner */}
+              <div className="mb-2 px-2 py-1.5 bg-black/50 border border-[#39ff14]/15 text-[10px] text-[#39ff14]/70">
+                {gameState.level === 1 && '> OBJECTIVE: Navigate to checkpoints at Y: 20, 50, 80. Use moveUp() and moveDown().'}
+                {gameState.level === 2 && '> OBJECTIVE: Track and destroy 3 moving targets. Use enemy.y and fire().'}
+                {gameState.level === 3 && '> OBJECTIVE: Defeat MAKAROV. Use move(), fire(), and activateShield().'}
               </div>
 
               <textarea
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="flex-1 bg-black border border-[#39ff14]/30 text-[#00ff00] font-mono text-xs p-3 resize-none focus:border-cyber-red focus:outline-none overflow-auto"
+                className="flex-1 bg-black/80 border border-[#39ff14]/20 text-[#00ff00] font-mono text-xs leading-relaxed p-3 resize-none focus:border-[#ff003c] focus:outline-none overflow-auto"
                 spellCheck={false}
+                placeholder="Write your C++ tank code here..."
               />
 
               <button
                 onClick={submitCode}
                 disabled={compiling || gameState.running}
-                className="mt-3 w-full px-4 py-2.5 bg-cyber-red text-black font-bold tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                className="mt-3 w-full px-4 py-3 bg-[#ff003c] text-black font-black tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm"
               >
                 <Play className="w-4 h-4 group-hover:animate-pulse" />
                 COMPILE & RUN
@@ -974,66 +1069,67 @@ export default function Round2() {
                   <Target className="w-5 h-5 text-cyber-red" />
                   <h2 className="text-sm font-bold tracking-[0.2em] text-cyber-red">BATTLE ARENA</h2>
                 </div>
-                {!gameState.running && !levelComplete && (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    onClick={resetGame}
-                    className="text-xs px-3 py-1 border border-[#39ff14]/40 text-[#39ff14] hover:bg-[#39ff14]/10 flex items-center gap-1 transition-all"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    RESET
-                  </motion.button>
-                )}
+                {/* Mini status in header */}
+                <div className="flex items-center gap-3 text-[10px] font-mono">
+                  {gameState.level === 1 && (
+                    <span className="text-cyan-400">CP: {gameState.currentCheckpoint}/3</span>
+                  )}
+                  {gameState.level === 2 && (
+                    <span className="text-cyan-400">TARGETS: {gameState.targetsDestroyed}/3</span>
+                  )}
+                  {gameState.level === 3 && (
+                    <span className="text-red-400">ENEMY: {Math.floor(gameState.enemy.hp)}%</span>
+                  )}
+                  <span className="text-[#39ff14]/60">HP: {Math.floor(gameState.player.hp)}%</span>
+                </div>
               </div>
 
               {/* Game Board */}
               <div className="relative w-full bg-cyber-gray border border-white/10 overflow-hidden mb-4" style={{ height: '450px'}}>
                 {/* Grid Background */}
                 <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" style={{backgroundColor: '#0f1419'}}>
-                  {/* Horizontal grid lines for aiming (every 25%) */}
-                  <line x1="0" y1="25%" x2="100%" y2="25%" stroke="#39ff14" strokeWidth="1" strokeDasharray="5,5" />
-                  <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#39ff14" strokeWidth="1.5" strokeDasharray="5,5" />
-                  <line x1="0" y1="75%" x2="100%" y2="75%" stroke="#39ff14" strokeWidth="1" strokeDasharray="5,5" />
-                  
+                  {/* Horizontal grid lines */}
+                  <line x1="0" y1="20%" x2="100%" y2="20%" stroke="#39ff14" strokeWidth="0.5" strokeDasharray="4,8" />
+                  <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#39ff14" strokeWidth="1" strokeDasharray="5,5" />
+                  <line x1="0" y1="80%" x2="100%" y2="80%" stroke="#39ff14" strokeWidth="0.5" strokeDasharray="4,8" />
                   {/* Vertical guide lines */}
                   <line x1="15%" y1="0" x2="15%" y2="100%" stroke="#39ff14" strokeWidth="0.5" opacity="0.3" />
                   <line x1="70%" y1="0" x2="70%" y2="100%" stroke="#ff003c" strokeWidth="0.5" opacity="0.3" />
                   <line x1="85%" y1="0" x2="85%" y2="100%" stroke="#39ff14" strokeWidth="0.5" opacity="0.3" />
                 </svg>
 
-                {/* HUD Status Panels */}
-                <div className="absolute top-3 left-3 z-20 text-xs font-mono">
-                  <div className="border border-[#39ff14]/40 bg-[#010301]/80 p-2 mb-2">
-                    <div className="text-[#39ff14] font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> PLAYER</div>
-                    <div className="text-white text-[10px] mt-1">HP: <span className="text-[#00ff00]">{Math.floor(gameState.player.hp)}%</span></div>
-                    <div className="text-white text-[10px]">Y: <span className="text-cyan-400">{Math.floor(gameState.player.y)}</span></div>
-                    {gameState.player.shieldActive && <div className="text-cyan-400 text-[10px]">SHIELD: ACTIVE</div>}
+                {/* Player HP Bar - compact bottom-left */}
+                <div className="absolute bottom-2 left-2 z-20 flex items-center gap-2">
+                  <span className="text-[9px] text-[#39ff14]/70 font-mono">YOU</span>
+                  <div className="w-24 h-1.5 bg-black/80 border border-[#39ff14]/20">
+                    <div className="h-full transition-all duration-300" style={{
+                      width: `${gameState.player.hp}%`,
+                      backgroundColor: gameState.player.hp > 60 ? '#39ff14' : gameState.player.hp > 30 ? '#f59e0b' : '#ef4444'
+                    }} />
                   </div>
+                  <span className="text-[9px] font-mono" style={{color: gameState.player.hp > 60 ? '#39ff14' : gameState.player.hp > 30 ? '#f59e0b' : '#ef4444'}}>{Math.floor(gameState.player.hp)}%</span>
                 </div>
 
-                {/* Distance & Status Indicator */}
-                <div className="absolute top-3 right-3 z-20 text-xs font-mono text-right">
-                  <div className="border border-[#39ff14]/40 bg-[#010301]/80 p-2">
-                    <div className="text-[#39ff14] font-bold mb-1">TARGET</div>
-                    {gameState.level === 1 && (
-                      <>
-                        <div className="text-white text-[10px]">CP: {gameState.currentCheckpoint}/3</div>
-                        <div className="text-cyan-300 text-[10px]">Dist: {Math.floor(Math.abs(gameState.player.y - gameState.checkpoints[gameState.currentCheckpoint]?.y || 0))}</div>
-                      </>
-                    )}
-                    {gameState.level === 2 && (
-                      <>
-                        <div className="text-white text-[10px]">Hit: {gameState.targetsDestroyed}/3</div>
-                      </>
-                    )}
-                    {gameState.level === 3 && (
-                      <>
-                        <div className="text-red-400 text-[10px]">Enemy HP: {Math.floor(gameState.enemy.hp)}%</div>
-                        <div className="text-cyan-300 text-[10px]">Dist: {Math.floor(Math.abs(gameState.player.y - gameState.enemy.y))}</div>
-                      </>
-                    )}
+                {/* Enemy HP Bar - compact bottom-right (Level 3) */}
+                {gameState.level === 3 && (
+                  <div className="absolute bottom-2 right-2 z-20 flex items-center gap-2">
+                    <span className="text-[9px] font-mono" style={{color: '#ff003c'}}>{Math.floor(gameState.enemy.hp)}%</span>
+                    <div className="w-24 h-1.5 bg-black/80 border border-red-400/20">
+                      <div className="h-full transition-all duration-300" style={{
+                        width: `${gameState.enemy.hp}%`,
+                        backgroundColor: '#ff003c'
+                      }} />
+                    </div>
+                    <span className="text-[9px] text-red-400/70 font-mono">FOE</span>
                   </div>
-                </div>
+                )}
+
+                {/* Shield indicator on player (Level 3) */}
+                {gameState.player.shieldActive && (
+                  <div className="absolute bottom-5 left-2 z-20 text-[9px] text-cyan-400 font-mono animate-pulse">
+                    SHIELD ACTIVE
+                  </div>
+                )}
 
                 {/* Checkpoints (Level 1) */}
                 {gameState.level === 1 && gameState.checkpoints.map((cp, i) => (
@@ -1060,28 +1156,27 @@ export default function Round2() {
                 {/* Moving Targets (Level 2) */}
                 {gameState.level === 2 && gameState.targets.map((target) => (
                   target.active && (
-                    <motion.div
+                    <div
                       key={`target-${target.id}`}
-                      animate={{ y: `${target.y}%` }}
-                      transition={{ type: 'tween', duration: 0.05 }}
-                      className="absolute w-10 h-6 flex items-center justify-center"
+                      className="absolute flex items-center justify-center"
                       style={{
                         left: `${target.x}%`,
+                        top: `${target.y}%`,
                         transform: 'translate(-50%, -50%)',
-                        zIndex: 5
+                        zIndex: 5,
+                        transition: 'top 0.05s linear'
                       }}
                     >
-                      <svg viewBox="0 0 100 60" className="w-full h-full" style={{
-                        filter: 'drop-shadow(0 0 10px rgba(255,0,0,0.6))'
+                      <svg viewBox="0 0 100 60" className="w-12 h-8" style={{
+                        filter: 'drop-shadow(0 0 12px rgba(255,0,0,0.8))'
                       }}>
-                        {/* Target shape */}
-                        <circle cx="50" cy="30" r="20" stroke="#ff0000" strokeWidth="2" fill="none" />
-                        <circle cx="50" cy="30" r="14" stroke="#ff3333" strokeWidth="1.5" fill="none" />
-                        <circle cx="50" cy="30" r="8" fill="#ff0000" opacity="0.8"/>
-                        <rect x="40" y="28" width="20" height="4" fill="#ff3333" />
-                        <rect x="48" y="20" width="4" height="20" fill="#ff3333" />
+                        <circle cx="50" cy="30" r="25" stroke="#ff0000" strokeWidth="2" fill="none" />
+                        <circle cx="50" cy="30" r="16" stroke="#ff3333" strokeWidth="1.5" fill="none" />
+                        <circle cx="50" cy="30" r="8" fill="#ff0000" opacity="0.9"/>
+                        <rect x="35" y="28" width="30" height="4" fill="#ff3333" />
+                        <rect x="48" y="15" width="4" height="30" fill="#ff3333" />
                       </svg>
-                    </motion.div>
+                    </div>
                   )
                 ))}
 
@@ -1102,7 +1197,13 @@ export default function Round2() {
                         <h3 className="text-3xl font-black text-[#39ff14] text-glow mb-2">
                           {gameState.level < gameState.maxLevel ? '✓ LEVEL COMPLETE' : '✓ ALL LEVELS CLEARED!'}
                         </h3>
-                        <p className="text-sm text-[#39ff14]/70 mb-4">HP Remaining: {Math.floor(gameState.player.hp)}%</p>
+                        <p className="text-sm text-[#39ff14]/70 mb-2">HP Remaining: {Math.floor(gameState.player.hp)}%</p>
+                        <div className="text-xs text-[#39ff14]/60 mb-4 font-mono">
+                          <div>BASE: 100 pts</div>
+                          <div>HP BONUS: {Math.floor(gameState.player.hp / 100 * 50)} pts</div>
+                          <div>TIME BONUS: -- pts</div>
+                          <div className="border-t border-[#39ff14]/20 mt-2 pt-2 text-[#39ff14]">ESTIMATED: ~{100 + Math.floor(gameState.player.hp / 100 * 50)} pts</div>
+                        </div>
                         {gameState.level < gameState.maxLevel ? (
                           <button
                             onClick={nextLevel}
@@ -1162,37 +1263,50 @@ export default function Round2() {
                 </AnimatePresence>
 
                 {/* Player Tank */}
-                <motion.div
-                  animate={{ y: `${gameState.player.y}%` }}
-                  transition={{ type: 'tween', duration: 0.05 }}
-                  className="absolute w-16 h-16 z-10"
-                  style={{ left: '8%', transform: 'translate(-50%, -50%)', top: 0 }}
+                <div
+                  className="absolute z-10"
+                  style={{
+                    left: '8%',
+                    top: `${gameState.player.y}%`,
+                    transform: 'translate(-50%, -50%)',
+                    width: '64px',
+                    height: '64px',
+                    transition: 'top 0.04s linear'
+                  }}
                 >
-                  <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-lg" style={{ filter: 'drop-shadow(0 0 8px rgba(0,255,0,0.6))' }}>
+                  <svg viewBox="0 0 100 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 10px rgba(0,255,0,0.8))' }}>
+                    {/* Tank treads */}
                     <rect x="10" y="10" width="80" height="18" rx="4" fill="#1a1a1a" stroke="#00ff00" strokeWidth="1.5"/>
                     <rect x="10" y="72" width="80" height="18" rx="4" fill="#1a1a1a" stroke="#00ff00" strokeWidth="1.5"/>
+                    {/* Tank body */}
                     <rect x="20" y="25" width="60" height="50" rx="4" fill="#004d00" stroke="#00ff00" strokeWidth="1.5"/>
+                    {/* Turret */}
                     <circle cx="50" cy="50" r="14" fill="#006600" stroke="#00ff00" strokeWidth="1.5"/>
+                    {/* Barrel */}
                     <rect x="50" y="46" width="38" height="8" fill="#00ff00"/>
                   </svg>
                   {gameState.player.shieldActive && (
                     <div
                       className="absolute inset-0 border-2 border-cyan-400 rounded-full opacity-75 animate-pulse"
-                      style={{ transform: 'scale(1.35)', boxShadow: '0 0 20px rgba(34,211,238,0.8)' }}
+                      style={{ transform: 'scale(1.35)', boxShadow: '0 0 25px rgba(34,211,238,0.9)' }}
                     />
                   )}
-                  <div className="text-center text-[10px] text-[#39ff14] mt-1 font-mono font-bold">YOU</div>
-                </motion.div>
+                </div>
 
                 {/* Enemy Tank (Level 3 Only) */}
                 {gameState.level === 3 && (
-                  <motion.div
-                    animate={{ y: `${gameState.enemy.y}%` }}
-                    transition={{ type: 'tween', duration: 0.05 }}
-                    className="absolute w-16 h-16 z-10"
-                    style={{ left: '92%', transform: 'translate(-50%, -50%) scaleX(-1)', top: 0 }}
+                  <div
+                    className="absolute z-10"
+                    style={{
+                      left: '92%',
+                      top: `${gameState.enemy.y}%`,
+                      transform: 'translate(-50%, -50%) scaleX(-1)',
+                      width: '64px',
+                      height: '64px',
+                      transition: 'top 0.04s linear'
+                    }}
                   >
-                    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-lg" style={{ filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.6))' }}>
+                    <svg viewBox="0 0 100 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 10px rgba(255,0,0,0.8))' }}>
                       <rect x="10" y="10" width="80" height="18" rx="4" fill="#1a1a1a" stroke="#ff0000" strokeWidth="1.5"/>
                       <rect x="10" y="72" width="80" height="18" rx="4" fill="#1a1a1a" stroke="#ff0000" strokeWidth="1.5"/>
                       <rect x="20" y="25" width="60" height="50" rx="4" fill="#4d0000" stroke="#ff0000" strokeWidth="1.5"/>
@@ -1200,32 +1314,72 @@ export default function Round2() {
                       <rect x="50" y="46" width="38" height="8" fill="#ff0000"/>
                     </svg>
                     {gameState.enemy.shieldActive && (
-                      <div 
+                      <div
                         className="absolute inset-0 border-2 border-cyan-400 rounded-full opacity-75 animate-pulse"
-                        style={{ transform: 'scale(1.35)', boxShadow: '0 0 20px rgba(34,211,238,0.8)' }}
+                        style={{ transform: 'scale(1.35)', boxShadow: '0 0 25px rgba(34,211,238,0.9)' }}
                       />
                     )}
-                    <div className="text-center text-[10px] text-red-500 mt-1 font-mono font-bold" style={{ transform: 'scaleX(-1)' }}>TARGET</div>
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* Projectiles */}
                 {gameState.projectiles.map((p, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 1 }}
-                    animate={{ x: `${p.x}%`, y: `${p.y}%` }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: 'tween', duration: 0.016 }}
-                    className="absolute rounded-full pointer-events-none"
+                  <div
+                    key={`proj-${i}`}
+                    className="absolute pointer-events-none"
                     style={{
-                      width: '10px',
-                      height: '6px',
-                      backgroundColor: p.isPlayer ? '#00ff00' : '#ff0000',
-                      boxShadow: p.isPlayer ? '0 0 8px #00ff00' : '0 0 8px #ff0000',
-                      transform: 'translate(-50%, -50%)'
+                      left: `${p.x}%`,
+                      top: `${p.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 15
                     }}
-                  />
+                  >
+                    {/* Glow trail */}
+                    <div style={{
+                      position: 'absolute',
+                      left: p.isPlayer ? '-16px' : '0',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '24px',
+                      height: '6px',
+                      background: p.isPlayer
+                        ? 'linear-gradient(to right, transparent, rgba(0,255,0,0.6))'
+                        : 'linear-gradient(to left, transparent, rgba(255,0,0,0.6))',
+                      filter: 'blur(2px)'
+                    }} />
+                    {/* Projectile body */}
+                    <div style={{
+                      width: '14px',
+                      height: '6px',
+                      borderRadius: '3px',
+                      backgroundColor: p.isPlayer ? '#00ff00' : '#ff0000',
+                      boxShadow: p.isPlayer
+                        ? '0 0 10px #00ff00, 0 0 20px rgba(0,255,0,0.5)'
+                        : '0 0 10px #ff0000, 0 0 20px rgba(255,0,0,0.5)',
+                    }} />
+                  </div>
+                ))}
+
+                {/* Explosions */}
+                {explosions.map((exp) => (
+                  <motion.div
+                    key={exp.id}
+                    initial={{ scale: 0.5, opacity: 1 }}
+                    animate={{ scale: 2, opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: `${exp.x}%`,
+                      top: `${exp.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 15
+                    }}
+                  >
+                    <div className="w-6 h-6 rounded-full" style={{
+                      background: 'radial-gradient(circle, #ff0, #f80, #f00, transparent)',
+                      boxShadow: '0 0 20px #f80, 0 0 40px #f00'
+                    }} />
+                  </motion.div>
                 ))}
               </div>
 
@@ -1244,7 +1398,7 @@ export default function Round2() {
           transition={{ delay: 0.3 }}
           className="border border-[#39ff14]/25 bg-[#0a0a1a]/80 backdrop-blur p-4 box-glow text-xs mb-6"
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div className="border-r border-[#39ff14]/20 pr-4">
               <div className="text-[#39ff14]/60 mb-1">STRATEGY</div>
               <div className="text-[#39ff14] font-mono font-bold">
@@ -1267,6 +1421,14 @@ export default function Round2() {
               <div className="text-[#39ff14]/60 mb-1">STATE</div>
               <div className={`font-mono font-bold ${gameState.player.hp > 30 ? 'text-[#39ff14]' : gameState.player.hp > 0 ? 'text-yellow-400' : 'text-red-500'}`}>
                 {gameState.player.hp > 0 ? 'OPERATIONAL' : 'DOWN'}
+              </div>
+            </div>
+            <div className="border-l border-[#39ff14]/20 pl-4">
+              <div className="text-[#39ff14]/60 mb-1">OBJECTIVE</div>
+              <div className="text-[#39ff14] font-mono font-bold">
+                {gameState.level === 1 && 'REACH ALL CHECKPOINTS'}
+                {gameState.level === 2 && 'DESTROY ALL TARGETS'}
+                {gameState.level === 3 && 'DEFEAT MAKAROV'}
               </div>
             </div>
           </div>
@@ -1295,46 +1457,6 @@ export default function Round2() {
         </motion.div>
       </div>
 
-      <style jsx>{`
-        .cyber-red { color: #ff003c; }
-        .text-cyber-red { color: #ff003c; }
-        .bg-cyber-red { background-color: #ff003c; }
-        .border-cyber-red { border-color: #ff003c; }
-        .cyber-red\/5 { background-color: rgba(255, 0, 60, 0.05); }
-        .cyber-red\/40 { border-color: rgba(255, 0, 60, 0.4); }
-        .text-glow { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor; }
-        .box-glow { box-shadow: 0 0 25px rgba(57,255,20,0.15), inset 0 0 15px rgba(57,255,20,0.03); }
-        .shimmer { animation: shimmer 3s infinite; }
-        @keyframes shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.97; } }
-        .breathe-glow { animation: breathe 4s infinite; }
-        @keyframes breathe { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 1.02; opacity: 0.8; } }
-        .border-scan { animation: scan 8s infinite; }
-        @keyframes scan { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-        .bg-cyber-gray { background-color: #0f1419; }
-        .scanlines::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(57,255,20,0.02) 2px,
-            rgba(57,255,20,0.02) 4px
-          );
-          pointer-events: none;
-          z-index: 1;
-        }
-        .crt-flicker { animation: flicker 0.15s infinite; }
-        @keyframes flicker {
-          0% { opacity: 0.98; }
-          50% { opacity: 1; }
-          100% { opacity: 0.98; }
-        }
-      `}</style>
     </div>
   );
 }

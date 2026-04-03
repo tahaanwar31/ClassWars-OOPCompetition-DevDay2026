@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
 import { Round2GameService } from './round2-game.service';
 
-@Controller('round2')
+@Controller('api/round2')
 export class Round2GameController {
   constructor(private round2Service: Round2GameService) {}
 
