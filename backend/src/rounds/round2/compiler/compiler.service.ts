@@ -5,8 +5,8 @@ import { firstValueFrom } from 'rxjs';
 @Injectable()
 export class CompilerService {
   private readonly JDOODLE_API_URL = 'https://api.jdoodle.com/v1/execute';
-  private readonly JDOODLE_CLIENT_ID = process.env.JDOODLE_CLIENT_ID || 'e384e34b4e193ec943835f806e1e21cc';
-  private readonly JDOODLE_CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET || '71abd256a893e05c37f0644d9cba89814f88c54a32ec66eb0dcffff3f64c0d09';
+  private readonly JDOODLE_CLIENT_ID = process.env.JDOODLE_CLIENT_ID || '';
+  private readonly JDOODLE_CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET || '';
 
   constructor(private readonly httpService: HttpService) {}
 
@@ -14,7 +14,7 @@ export class CompilerService {
     console.log(`[Level ${level}] Compiling code...`);
     console.log('Using JDoodle API');
 
-    // Remove the fake include so it compiles cleanly in Piston
+    // Remove the fake include so it compiles cleanly
     const cleanCode = code.replace('#include "Tank.h"', '');
 
     // --- C++ TEST HARNESS (Level-specific behavioral profiling) ---
@@ -82,10 +82,6 @@ int main() {
     t.y = 30.0; t.moveAction = "idle"; t.move();
     cout << "LEVEL1:S30:" << t.moveAction << endl;
 
-    // Derive profile: if tank moves in correct direction for different positions, it's tracking
-    // We check the first 3 scenarios which cover movement toward different checkpoints
-    cout << "PROFILE:track:none:none" << endl;
-
     return 0;
 }
 `;
@@ -108,12 +104,6 @@ int main() {
     // Scenario 4: Target far away (enemy.y=10, tank.y=90) -> should move UP
     t.enemy.y = 10.0; t.y = 90.0; t.moveAction = "idle"; t.move();
     cout << "LEVEL2:FAR:" << t.moveAction << endl;
-
-    // Derive profile from scenarios
-    // Movement profile: if UP when above AND DOWN when below -> track
-    // Fire profile: if fireAction is "always" when aligned -> align
-    // Shield: not used in Level 2
-    cout << "PROFILE:track:align:none" << endl;
 
     return 0;
 }
@@ -146,12 +136,6 @@ int main() {
     t.hp = 30.0; t.enemy.firing = true; t.shieldAction = "none"; t.defend();
     cout << "LEVEL3:LOWHP:" << t.shieldAction << endl;
 
-    // Derive profile from scenarios
-    // Movement: track if both directions correct
-    // Fire: align if fireAction is "always"
-    // Shield: smart if shieldAction is "smart" in any defend scenario
-    cout << "PROFILE:track:align:smart" << endl;
-
     return 0;
 }
 `;
@@ -175,10 +159,10 @@ int main() {
       const result = response.data;
 
       // JDoodle returns: { output, statusCode, memory, cpuTime }
-      // statusCode 200 means successful execution
       if (result.statusCode === 200 || (!result.error && result.output !== undefined)) {
-        // Check if output contains compilation errors
         const output = result.output || '';
+
+        // Check if output contains compilation errors
         if (output.includes('error:') || output.includes('Error:')) {
           console.error('Compilation Error:', output);
           return { success: false, error: output };
@@ -187,7 +171,7 @@ int main() {
         console.log('Compilation successful');
         console.log('Output:', output);
 
-        // Parse the actual output to derive a real profile instead of the template
+        // Parse the actual output to derive a real profile
         const profile = this.deriveProfile(output, level);
         const finalOutput = profile ? `${output}\n${profile}` : output;
 

@@ -81,20 +81,26 @@ export class GameConfig {
       {
         roundKey: 'round2',
         roundName: 'Round 2',
-        enabled: false,
-        status: 'under_construction',
-        underConstruction: true,
+        enabled: true,
+        status: 'active',
+        underConstruction: false,
         startTime: null,
         endTime: null,
         playWindowStart: null,
         playWindowEnd: null,
-        totalGameTimeSeconds: 0,
-        questionTimeoutSeconds: 0,
-        pointsPerCorrect: 0,
-        maxLevel: 0,
+        totalGameTimeSeconds: 1800,
+        questionTimeoutSeconds: 60,
+        pointsPerCorrect: 100,
+        maxLevel: 3,
         maxConsecutiveWrong: 0,
-        rules: ['This round is under construction.'],
-        leaderboardEnabled: false
+        rules: [
+          'Write C++ code to control your tank',
+          'Level 1: Navigate through checkpoints using moveUp()/moveDown()',
+          'Level 2: Destroy moving targets using fire() when aligned',
+          'Level 3: Defeat MAKAROV using move(), attack(), and defend()',
+          'Each level scores up to 200 points (base + HP bonus + time bonus)'
+        ],
+        leaderboardEnabled: true
       }
     ]
   })
