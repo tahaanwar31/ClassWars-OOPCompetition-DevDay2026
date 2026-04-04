@@ -23,6 +23,7 @@ interface GameState {
   running: boolean;
   deployed: boolean;
   player: {
+    x: number;
     y: number;
     hp: number;
     shield: number;
@@ -354,7 +355,7 @@ export default function Round2() {
     maxLevel: 3,
     running: false,
     deployed: false,
-    player: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+    player: { x: 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
     enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
     projectiles: [],
     playerStrategy: {
@@ -386,7 +387,7 @@ export default function Round2() {
         ...prev,
         running: false,
         deployed: false,
-        player: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+        player: { x: 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
         enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
         projectiles: [],
         playerStrategy: {
@@ -432,7 +433,7 @@ export default function Round2() {
     gameStateSnapshot: GameState,
     dt: number
   ) => {
-    // Deep clone to avoid mutating React state
+    // Note: gameStateSnapshot.player.y already has the MOVED position applied
     const newState: GameState = {
       ...gameStateSnapshot,
       player: { ...gameStateSnapshot.player },
@@ -444,12 +445,13 @@ export default function Round2() {
     enemyTimeRef.current += dt;
 
     if (gameStateSnapshot.level === 1) {
-      // Level 1: Check if player reached the current checkpoint
+      // Level 1: Check if player reached the current checkpoint (uses moved position)
       const checkpoint = newState.checkpoints?.[newState.currentCheckpoint];
       if (checkpoint && !checkpoint.visited) {
-        const distance = Math.abs(gameStateSnapshot.player.y - checkpoint.y);
-        // Require being within 4 units of checkpoint to count as visited
-        if (distance <= 4) {
+        const yDist = Math.abs(newState.player.y - checkpoint.y);
+        const xDist = Math.abs(newState.player.x - 50); // Checkpoints are at x=50%
+        // Require tank to be at checkpoint column AND at checkpoint Y
+        if (yDist <= 4 && xDist <= 5) {
           checkpoint.visited = true;
           newState.currentCheckpoint! += 1;
           if (newState.currentCheckpoint! >= newState.checkpoints!.length) {
@@ -533,48 +535,58 @@ export default function Round2() {
     lastTimeRef.current = timestamp;
 
     setGameState(prev => {
-      let newState = calculateLevelLogic(prev, dt);
-      const playerMoveSpeed = 60;
+      const playerMoveSpeed = prev.level === 1 ? 25 : 60;
+      const playerMoveSpeedX = 30; // Horizontal speed for Level 1
 
-      // ===== PLAYER MOVEMENT =====
-      // Use newState (not prev) for checkpoint/target/enemy targeting
-      // to avoid one-frame delay when switching targets after visitation
+      // ===== STEP 1: COMPUTE PLAYER MOVEMENT FIRST =====
+      let newPlayerX = prev.player.x;
+      let newPlayerY = prev.player.y;
       if (prev.playerStrategy.moveMode === 'track') {
         if (prev.level === 1) {
-          // LEVEL 1: Track checkpoint
-          const checkpoint = newState.checkpoints?.[newState.currentCheckpoint!];
+          const checkpoint = prev.checkpoints?.[prev.currentCheckpoint!];
           if (checkpoint && !checkpoint.visited) {
-            const diff = checkpoint.y - newState.player.y;
-            if (Math.abs(diff) > 2.0) {
-              newState.player.y += Math.sign(diff) * playerMoveSpeed * dt;
+            // First move X toward center (50%), then Y toward checkpoint
+            const targetX = 50;
+            const xDiff = targetX - newPlayerX;
+            if (Math.abs(xDiff) > 1.5) {
+              // Move horizontally first
+              newPlayerX += Math.sign(xDiff) * playerMoveSpeedX * dt;
+            } else {
+              // Arrived at center column, now move vertically
+              newPlayerX = targetX;
+              const yDiff = checkpoint.y - newPlayerY;
+              if (Math.abs(yDiff) > 2.0) {
+                newPlayerY += Math.sign(yDiff) * playerMoveSpeed * dt;
+              }
             }
           }
         } else if (prev.level === 2) {
-          // LEVEL 2: Track closest active target
-          const activeTargets = newState.targets?.filter(t => t.active) || [];
+          const activeTargets = prev.targets?.filter(t => t.active) || [];
           const closestTarget = activeTargets
-            .sort((a, b) => Math.abs(a.y - newState.player.y) - Math.abs(b.y - newState.player.y))[0];
+            .sort((a, b) => Math.abs(a.y - newPlayerY) - Math.abs(b.y - newPlayerY))[0];
           if (closestTarget) {
-            const diff = closestTarget.y - newState.player.y;
+            const diff = closestTarget.y - newPlayerY;
             if (Math.abs(diff) > 1.5) {
-              newState.player.y += Math.sign(diff) * playerMoveSpeed * dt;
+              newPlayerY += Math.sign(diff) * playerMoveSpeed * dt;
             }
           }
         } else {
-          // LEVEL 3: Track enemy
-          const diff = newState.enemy.y - newState.player.y;
+          const diff = prev.enemy.y - newPlayerY;
           if (Math.abs(diff) > 1.5) {
-            newState.player.y += Math.sign(diff) * playerMoveSpeed * dt;
+            newPlayerY += Math.sign(diff) * playerMoveSpeed * dt;
           }
         }
       } else if (prev.playerStrategy.moveMode === 'up') {
-        newState.player.y -= playerMoveSpeed * dt;
+        newPlayerY -= playerMoveSpeed * dt;
       } else if (prev.playerStrategy.moveMode === 'down') {
-        newState.player.y += playerMoveSpeed * dt;
+        newPlayerY += playerMoveSpeed * dt;
       }
+      newPlayerX = Math.max(5, Math.min(90, newPlayerX));
+      newPlayerY = Math.max(10, Math.min(90, newPlayerY));
 
-      // Clamp player position
-      newState.player.y = Math.max(10, Math.min(90, newState.player.y));
+      // ===== STEP 2: RUN LEVEL LOGIC WITH MOVED POSITION =====
+      const movedPrev = { ...prev, player: { ...prev.player, x: newPlayerX, y: newPlayerY } };
+      let newState = calculateLevelLogic(movedPrev, dt);
 
       // ===== PLAYER FIRING & SHIELD =====
       newState.player.cooldown -= dt;
@@ -805,11 +817,35 @@ export default function Round2() {
           setCompileStatus('DEPLOYMENT SUCCESSFUL');
           setTimeout(() => {
             setCompiling(false);
-            resetGame();
-            setGameState(prev => ({
-              ...prev,
-              playerStrategy: { moveMode, fireMode, shieldMode }
-            }));
+            // Atomic reset+strategy in ONE state update to avoid race conditions
+            setGameState(prev => {
+              const newState = {
+                ...prev,
+                running: false,
+                deployed: false,
+                player: { x: 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+                enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+                projectiles: [],
+                playerStrategy: { moveMode, fireMode, shieldMode },
+                checkpoints: [
+                  { y: 20, visited: false },
+                  { y: 50, visited: false },
+                  { y: 80, visited: false }
+                ],
+                currentCheckpoint: 0,
+                targets: [
+                  { y: 25, x: 70, active: true, id: 1 },
+                  { y: 50, x: 70, active: true, id: 2 },
+                  { y: 75, x: 70, active: true, id: 3 }
+                ],
+                targetsDestroyed: 0
+              };
+              return newState;
+            });
+            setLevelComplete(false);
+            setExplosions([]);
+            setGameOver(false);
+            log(`DEPLOYING: ${moveMode.toUpperCase()} / ${fireMode.toUpperCase()} / ${shieldMode.toUpperCase()}`);
             setTimeout(() => startGame(), 500);
           }, 1000);
         }, 1000);
@@ -893,9 +929,36 @@ export default function Round2() {
 
   const retryGame = useCallback(() => {
     setGameOver(false);
-    resetGame();
+    // Preserve current strategy when retrying
+    setGameState(prev => {
+      const strategy = prev.playerStrategy;
+      const newState = {
+        ...prev,
+        running: false,
+        deployed: false,
+        player: { x: 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+        enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+        projectiles: [],
+        playerStrategy: strategy,
+        checkpoints: [
+          { y: 20, visited: false },
+          { y: 50, visited: false },
+          { y: 80, visited: false }
+        ],
+        currentCheckpoint: 0,
+        targets: [
+          { y: 25, x: 70, active: true, id: 1 },
+          { y: 50, x: 70, active: true, id: 2 },
+          { y: 75, x: 70, active: true, id: 3 }
+        ],
+        targetsDestroyed: 0
+      };
+      return newState;
+    });
+    setLevelComplete(false);
+    setExplosions([]);
     setTimeout(() => startGame(), 500);
-  }, [resetGame, startGame]);
+  }, [startGame]);
 
   const finishGame = useCallback(async () => {
     if (sessionIdRef.current) {
@@ -1131,11 +1194,11 @@ export default function Round2() {
                   </div>
                 )}
 
-                {/* Checkpoints (Level 1) */}
+                {/* Checkpoints (Level 1) - in center, tank moves to cross them */}
                 {gameState.level === 1 && gameState.checkpoints.map((cp, i) => (
                   <motion.div
                     key={`cp-${i}`}
-                    className="absolute w-8 h-8 flex items-center justify-center"
+                    className="absolute flex items-center justify-center"
                     style={{
                       left: '50%',
                       top: `${cp.y}%`,
@@ -1143,12 +1206,14 @@ export default function Round2() {
                       zIndex: 5
                     }}
                   >
-                    <div className={`w-full h-full rounded-lg border-2 flex items-center justify-center ${
-                      cp.visited ? 'border-[#39ff14] bg-[#39ff14]/10' : 'border-cyan-400 bg-cyan-400/5 animate-pulse'
+                    <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center ${
+                      cp.visited ? 'border-[#39ff14] bg-[#39ff14]/15' : 'border-cyan-400 bg-cyan-400/5 animate-pulse'
                     }`} style={{
-                      boxShadow: cp.visited ? '0 0 12px rgba(57,255,20,0.6)' : '0 0 12px rgba(0,255,255,0.4)'
+                      boxShadow: cp.visited ? '0 0 16px rgba(57,255,20,0.7)' : '0 0 16px rgba(0,255,255,0.5)'
                     }}>
-                      <span className={`text-xs font-bold ${cp.visited ? 'text-[#39ff14]' : 'text-cyan-400'}`}>{i + 1}</span>
+                      <span className={`text-sm font-bold ${cp.visited ? 'text-[#39ff14]' : 'text-cyan-400'}`}>
+                        {cp.visited ? '✓' : (i + 1)}
+                      </span>
                     </div>
                   </motion.div>
                 ))}
@@ -1266,12 +1331,12 @@ export default function Round2() {
                 <div
                   className="absolute z-10"
                   style={{
-                    left: '8%',
+                    left: `${gameState.player.x}%`,
                     top: `${gameState.player.y}%`,
                     transform: 'translate(-50%, -50%)',
                     width: '64px',
                     height: '64px',
-                    transition: 'top 0.04s linear'
+                    transition: 'left 0.04s linear, top 0.04s linear'
                   }}
                 >
                   <svg viewBox="0 0 100 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 10px rgba(0,255,0,0.8))' }}>
