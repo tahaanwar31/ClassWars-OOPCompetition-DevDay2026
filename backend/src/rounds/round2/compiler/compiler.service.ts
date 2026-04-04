@@ -4,36 +4,38 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CompilerService {
-  private readonly PISTON_EXECUTE_URL =
-    process.env.PISTON_EXECUTE_URL || 'https://emkc.org/api/v2/piston/execute';
+  private readonly JDOODLE_API_URL = 'https://api.jdoodle.com/v1/execute';
+  private readonly JDOODLE_CLIENT_ID = process.env.JDOODLE_CLIENT_ID || '';
+  private readonly JDOODLE_CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET || '';
 
   constructor(private readonly httpService: HttpService) {}
 
   async compileCode(code: string, level: number): Promise<{ success: boolean; output?: string; error?: string }> {
     console.log(`[Level ${level}] Compiling code...`);
-    console.log('Using Piston API at:', this.PISTON_EXECUTE_URL);
+    console.log('Using JDoodle API');
 
-    // Remove the fake include so it compiles cleanly in Piston
+    // Remove the fake include so it compiles cleanly
     const cleanCode = code.replace('#include "Tank.h"', '');
 
-    // --- C++ TEST HARNESS (Level-specific) ---
-    // We wrap the user's code in a real C++ program that simulates the game state.
-    // Tests are different based on level:
-    // Level 1: Checkpoint navigation (no enemy)
-    // Level 2+: Enemy tracking and combat
+    // --- C++ TEST HARNESS (Level-specific behavioral profiling) ---
+    // The harness runs multiple scenarios and outputs a machine-readable PROFILE summary.
+    // Each scenario tests a different game state to derive the tank's behavioral profile.
     let cppWrapper = `
 #include <iostream>
 #include <cmath>
 using namespace std;
 
 struct Enemy {
-    float y;
-    bool isFiring() { return true; }
+    float y = 50.0;
+    float hp = 100.0;
+    bool firing = false;
+    bool isFiring() { return firing; }
 };
 
 class Tank {
 public:
     float y = 50.0;
+    float hp = 100.0;
     Enemy enemy;
     string moveAction = "idle";
     string fireAction = "none";
@@ -55,113 +57,242 @@ int main() {
     MyTank t;
 `;
 
-    // Level-specific tests
     if (level === 1) {
-      // LEVEL 1: Checkpoint Navigation Tests
-      // Test scenario 1: Player at y=50, first checkpoint at y=20 (need to move DOWN to reach)
+      // LEVEL 1: Checkpoint Navigation Profiling
+      // Tests movement toward checkpoint positions at Y: 20, 50, 80
+      // The tank starts at Y=50 and needs to navigate to all 3 checkpoints in order.
       cppWrapper += `
-    // LEVEL 1 TEST 1: At y=50, should move toward checkpoint at y=20 (DOWN)
-    t.y = 50.0;
-    t.moveAction = "idle";
-    t.move();
-    if (t.moveAction == "down") {
-      cout << "LEVEL1_CHECKPOINT_DOWN" << endl;
-    } else if (t.moveAction == "up") {
-      cout << "LEVEL1_CHECKPOINT_UP" << endl;
-    } else {
-      cout << "LEVEL1_NO_MOVE" << endl;
-    }
+    // Scenario 1: Tank at Y=80, first checkpoint at Y=20 -> should move UP
+    t.y = 80.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL1:S80:" << t.moveAction << endl;
 
-    // LEVEL 1 TEST 2: Verify the code can detect multiple checkpoints
-    // Reset and test again to ensure behavior is consistent
-    t.y = 50.0;
-    t.moveAction = "idle";
-    t.move();
-    if (t.moveAction != "idle") {
-      cout << "LEVEL1_CAN_MOVE" << endl;
-    }
+    // Scenario 2: Tank at Y=20, second checkpoint at Y=50 -> should move DOWN
+    t.y = 20.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL1:S20:" << t.moveAction << endl;
 
-    // LEVEL 1 TEST 3: Test from different position (y=25) to verify adaptive logic
-    t.y = 25.0;
-    t.moveAction = "idle";
-    t.move();
-    if (t.moveAction == "down") {
-      cout << "LEVEL1_ADAPTIVE_DOWN" << endl;
-    } else if (t.moveAction == "up") {
-      cout << "LEVEL1_ADAPTIVE_UP" << endl;
-    }
+    // Scenario 3: Tank at Y=50, third checkpoint at Y=80 -> should move DOWN
+    t.y = 50.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL1:S50:" << t.moveAction << endl;
+
+    // Scenario 4: Tank at Y=50, first checkpoint at Y=20 -> should move UP
+    t.y = 50.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL1:S50B:" << t.moveAction << endl;
+
+    // Scenario 5: Tank at Y=30, adaptive test
+    t.y = 30.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL1:S30:" << t.moveAction << endl;
+
+    return 0;
+}
+`;
+    } else if (level === 2) {
+      // LEVEL 2: Enemy/Target Tracking + Firing Profiling
+      // Tests movement toward targets, firing when aligned, and behavior at distance.
+      cppWrapper += `
+    // Scenario 1: Target above (enemy.y=20, tank.y=50) -> should move UP
+    t.enemy.y = 20.0; t.y = 50.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL2:ABOVE:" << t.moveAction << endl;
+
+    // Scenario 2: Target below (enemy.y=80, tank.y=50) -> should move DOWN
+    t.enemy.y = 80.0; t.y = 50.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL2:BELOW:" << t.moveAction << endl;
+
+    // Scenario 3: Aligned with target (enemy.y=50, tank.y=50) -> should fire or stay
+    t.enemy.y = 50.0; t.y = 50.0; t.moveAction = "idle"; t.attack();
+    cout << "LEVEL2:ALIGNED:" << t.fireAction << endl;
+
+    // Scenario 4: Target far away (enemy.y=10, tank.y=90) -> should move UP
+    t.enemy.y = 10.0; t.y = 90.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL2:FAR:" << t.moveAction << endl;
 
     return 0;
 }
 `;
     } else {
-      // LEVEL 2 & 3: Enemy Tracking Tests
+      // LEVEL 3: Full Combat Profiling (movement + firing + defense)
+      // All Level 2 tests plus shield/defense scenarios.
       cppWrapper += `
-    // Test 1: Enemy is ABOVE the tank (y=20 vs y=50)
-    t.enemy.y = 20.0;
-    t.y = 50.0;
-    t.moveAction = "idle";
-    t.move();
-    if (t.moveAction == "up") cout << "TEST_ABOVE:UP" << endl;
-    if (t.moveAction == "down") cout << "TEST_ABOVE:DOWN" << endl;
+    // Scenario 1: Enemy above -> should move UP toward enemy
+    t.enemy.y = 20.0; t.y = 50.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL3:ABOVE:" << t.moveAction << endl;
 
-    // Test 2: Enemy is BELOW the tank (y=80 vs y=50)
-    t.enemy.y = 80.0;
-    t.y = 50.0;
-    t.moveAction = "idle";
-    t.move();
-    if (t.moveAction == "up") cout << "TEST_BELOW:UP" << endl;
-    if (t.moveAction == "down") cout << "TEST_BELOW:DOWN" << endl;
+    // Scenario 2: Enemy below -> should move DOWN toward enemy
+    t.enemy.y = 80.0; t.y = 50.0; t.moveAction = "idle"; t.move();
+    cout << "LEVEL3:BELOW:" << t.moveAction << endl;
 
-    // Test 3: Attack
-    t.enemy.y = 50.0;
-    t.y = 50.0;
-    t.attack();
-    if (t.fireAction == "always") cout << "TEST_ATTACK:FIRE" << endl;
+    // Scenario 3: Aligned with enemy -> should fire
+    t.enemy.y = 50.0; t.y = 50.0; t.moveAction = "idle"; t.attack();
+    cout << "LEVEL3:ALIGNED:" << t.fireAction << endl;
 
-    // Test 4: Defend
-    t.defend();
-    if (t.shieldAction == "smart") cout << "TEST_DEFEND:SHIELD" << endl;
+    // Scenario 4: Enemy is firing -> should activate shield
+    t.enemy.y = 50.0; t.y = 50.0; t.enemy.firing = true; t.shieldAction = "none"; t.defend();
+    cout << "LEVEL3:FIRING:" << t.shieldAction << endl;
+
+    // Scenario 5: Enemy not firing -> check shield behavior
+    t.enemy.firing = false; t.shieldAction = "none"; t.defend();
+    cout << "LEVEL3:QUIET:" << t.shieldAction << endl;
+
+    // Scenario 6: Low HP, enemy firing -> defensive behavior
+    t.hp = 30.0; t.enemy.firing = true; t.shieldAction = "none"; t.defend();
+    cout << "LEVEL3:LOWHP:" << t.shieldAction << endl;
 
     return 0;
 }
 `;
     }
 
-    // --- REAL COMPILER (Piston API) ---
+    // --- REAL COMPILER (JDoodle API) ---
     try {
-      console.log('Sending request to Piston API...');
+      console.log('Sending request to JDoodle API...');
 
       const response = await firstValueFrom(
-        this.httpService.post(this.PISTON_EXECUTE_URL, {
-          language: 'cpp',
-          version: '10.2.0',
-          files: [{ content: cppWrapper }],
+        this.httpService.post(this.JDOODLE_API_URL, {
+          clientId: this.JDOODLE_CLIENT_ID,
+          clientSecret: this.JDOODLE_CLIENT_SECRET,
+          script: cppWrapper,
+          language: 'cpp17',
+          versionIndex: '0',
         })
       );
 
-      console.log('Received response from Piston API');
+      console.log('Received response from JDoodle API');
       const result = response.data;
 
-      if (result.run && result.run.code === 0) {
-        console.log('✅ Compilation successful');
-        console.log('Output:', result.run.stdout);
-        return { success: true, output: result.run.stdout };
+      // JDoodle returns: { output, statusCode, memory, cpuTime }
+      if (result.statusCode === 200 || (!result.error && result.output !== undefined)) {
+        const output = result.output || '';
+
+        // Check if output contains compilation errors
+        if (output.includes('error:') || output.includes('Error:')) {
+          console.error('Compilation Error:', output);
+          return { success: false, error: output };
+        }
+
+        console.log('Compilation successful');
+        console.log('Output:', output);
+
+        // Parse the actual output to derive a real profile
+        const profile = this.deriveProfile(output, level);
+        const finalOutput = profile ? `${output}\n${profile}` : output;
+
+        return { success: true, output: finalOutput };
       } else {
-        const errorMsg =
-          (result.compile && result.compile.stderr) ||
-          (result.run && result.run.stderr) ||
-          'Unknown Compilation Error';
-        console.error('❌ Compilation Error:', errorMsg);
+        const errorMsg = result.error || result.output || 'Unknown Compilation Error';
+        console.error('Compilation Error:', errorMsg);
         return { success: false, error: errorMsg };
       }
     } catch (error) {
-      console.error('❌ Piston API Error:', error.message);
+      console.error('JDoodle API Error:', error.message);
       if (error.response) {
         console.error('Response status:', error.response.status);
         console.error('Response data:', error.response.data);
       }
       throw new Error(`Compiler API Error: ${error.message}`);
+    }
+  }
+
+  /**
+   * Derives a behavioral PROFILE line from the actual test scenario outputs.
+   * This replaces the hardcoded template with real analysis of what the code does.
+   */
+  private deriveProfile(stdout: string, level: number): string | null {
+    const lines = stdout.split('\n').map(l => l.trim()).filter(Boolean);
+
+    if (level === 1) {
+      // Check if code moves in different directions for different positions
+      const s80 = lines.find(l => l.startsWith('LEVEL1:S80:'));
+      const s20 = lines.find(l => l.startsWith('LEVEL1:S20:'));
+      const s50 = lines.find(l => l.startsWith('LEVEL1:S50:'));
+      const s50b = lines.find(l => l.startsWith('LEVEL1:S50B:'));
+      const s30 = lines.find(l => l.startsWith('LEVEL1:S30:'));
+
+      const getAction = (line: string | undefined) => line ? line.split(':')[2] : 'idle';
+
+      const actions = [s80, s20, s50, s50b, s30].map(getAction);
+      const hasUp = actions.includes('up');
+      const hasDown = actions.includes('down');
+      const hasIdle = actions.every(a => a === 'idle');
+
+      if (hasUp && hasDown) {
+        return 'PROFILE:track:none:none';
+      } else if (hasUp && !hasDown) {
+        return 'PROFILE:up:none:none';
+      } else if (hasDown && !hasUp) {
+        return 'PROFILE:down:none:none';
+      } else if (hasIdle) {
+        return 'PROFILE:idle:none:none';
+      }
+      // Fallback: if there's any non-idle action, assume track
+      const hasAny = actions.some(a => a !== 'idle');
+      return hasAny ? 'PROFILE:track:none:none' : 'PROFILE:idle:none:none';
+
+    } else if (level === 2) {
+      const above = lines.find(l => l.startsWith('LEVEL2:ABOVE:'));
+      const below = lines.find(l => l.startsWith('LEVEL2:BELOW:'));
+      const aligned = lines.find(l => l.startsWith('LEVEL2:ALIGNED:'));
+
+      const getAction = (line: string | undefined) => line ? line.split(':')[2] : 'idle';
+
+      // Movement profile
+      let moveProfile = 'idle';
+      const aboveAction = getAction(above);
+      const belowAction = getAction(below);
+      if (aboveAction === 'up' && belowAction === 'down') {
+        moveProfile = 'track';
+      } else if (aboveAction === 'up' || belowAction === 'up') {
+        moveProfile = 'up';
+      } else if (aboveAction === 'down' || belowAction === 'down') {
+        moveProfile = 'down';
+      }
+
+      // Fire profile
+      let fireProfile = 'none';
+      const fireAction = getAction(aligned);
+      if (fireAction === 'always') {
+        fireProfile = 'align';
+      }
+
+      return `PROFILE:${moveProfile}:${fireProfile}:none`;
+
+    } else {
+      // Level 3
+      const above = lines.find(l => l.startsWith('LEVEL3:ABOVE:'));
+      const below = lines.find(l => l.startsWith('LEVEL3:BELOW:'));
+      const aligned = lines.find(l => l.startsWith('LEVEL3:ALIGNED:'));
+      const firing = lines.find(l => l.startsWith('LEVEL3:FIRING:'));
+      const quiet = lines.find(l => l.startsWith('LEVEL3:QUIET:'));
+      const lowhp = lines.find(l => l.startsWith('LEVEL3:LOWHP:'));
+
+      const getAction = (line: string | undefined) => line ? line.split(':')[2] : 'idle';
+
+      // Movement profile
+      let moveProfile = 'idle';
+      const aboveAction = getAction(above);
+      const belowAction = getAction(below);
+      if (aboveAction === 'up' && belowAction === 'down') {
+        moveProfile = 'track';
+      } else if (aboveAction === 'up' || belowAction === 'up') {
+        moveProfile = 'up';
+      } else if (aboveAction === 'down' || belowAction === 'down') {
+        moveProfile = 'down';
+      }
+
+      // Fire profile
+      let fireProfile = 'none';
+      const fireAction = getAction(aligned);
+      if (fireAction === 'always') {
+        fireProfile = 'align';
+      }
+
+      // Shield profile
+      let shieldProfile = 'none';
+      const firingAction = getAction(firing);
+      const lowhpAction = getAction(lowhp);
+      if (firingAction === 'smart' || lowhpAction === 'smart') {
+        shieldProfile = 'smart';
+      }
+
+      return `PROFILE:${moveProfile}:${fireProfile}:${shieldProfile}`;
     }
   }
 }

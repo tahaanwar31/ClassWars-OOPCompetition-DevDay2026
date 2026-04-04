@@ -149,9 +149,9 @@ public:
     void move() override {
         int targetY = checkpoints[checkpointIndex];
         
-        if (this->y > targetY + 2) {
+        if (this->y < targetY - 2) {
             moveDown();
-        } else if (this->y < targetY - 2) {
+        } else if (this->y > targetY + 2) {
             moveUp();
         }
         

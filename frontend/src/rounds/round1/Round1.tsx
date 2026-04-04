@@ -359,12 +359,12 @@ public:
     void move() override {
         int targetY = checkpoints[checkpointIndex];  // Get the Y position of current checkpoint
         
-        // Check if tank is BELOW the target (tank Y is greater than target Y)
-        if (this->y > targetY + 2) {
+        // Check if tank is ABOVE the target (more than 2 units higher)
+        if (this->y < targetY - 2) {
             moveDown();  // Move DOWN towards the checkpoint
         } 
-        // Check if tank is ABOVE the target (tank Y is less than target Y)
-        else if (this->y < targetY - 2) {
+        // Check if tank is BELOW the target (more than 2 units lower)
+        else if (this->y > targetY + 2) {
             moveUp();  // Move UP towards the checkpoint
         }
         
