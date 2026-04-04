@@ -109,30 +109,18 @@ int main() {
 }
 `;
     } else {
-      // LEVEL 3: Full Combat Profiling (movement + firing + defense)
-      // All Level 2 tests plus shield/defense scenarios.
+      // LEVEL 3: Shield Defense Profiling
+      // Tanks don't move or fire. Only shield matters.
       cppWrapper += `
-    // Scenario 1: Enemy above -> should move UP toward enemy
-    t.enemy.y = 20.0; t.y = 50.0; t.moveAction = "idle"; t.move();
-    cout << "LEVEL3:ABOVE:" << t.moveAction << endl;
-
-    // Scenario 2: Enemy below -> should move DOWN toward enemy
-    t.enemy.y = 80.0; t.y = 50.0; t.moveAction = "idle"; t.move();
-    cout << "LEVEL3:BELOW:" << t.moveAction << endl;
-
-    // Scenario 3: Aligned with enemy -> should fire
-    t.enemy.y = 50.0; t.y = 50.0; t.moveAction = "idle"; t.attack();
-    cout << "LEVEL3:ALIGNED:" << t.fireAction << endl;
-
-    // Scenario 4: Enemy is firing -> should activate shield
-    t.enemy.y = 50.0; t.y = 50.0; t.enemy.firing = true; t.shieldAction = "none"; t.defend();
+    // Scenario 1: Enemy is firing -> should activate shield
+    t.enemy.firing = true; t.shieldAction = "none"; t.defend();
     cout << "LEVEL3:FIRING:" << t.shieldAction << endl;
 
-    // Scenario 5: Enemy not firing -> check shield behavior
+    // Scenario 2: Enemy not firing -> check behavior
     t.enemy.firing = false; t.shieldAction = "none"; t.defend();
     cout << "LEVEL3:QUIET:" << t.shieldAction << endl;
 
-    // Scenario 6: Low HP, enemy firing -> defensive behavior
+    // Scenario 3: Low HP, enemy firing -> should activate shield
     t.hp = 30.0; t.enemy.firing = true; t.shieldAction = "none"; t.defend();
     cout << "LEVEL3:LOWHP:" << t.shieldAction << endl;
 
@@ -255,34 +243,11 @@ int main() {
       return `PROFILE:${moveProfile}:${fireProfile}:none`;
 
     } else {
-      // Level 3
-      const above = lines.find(l => l.startsWith('LEVEL3:ABOVE:'));
-      const below = lines.find(l => l.startsWith('LEVEL3:BELOW:'));
-      const aligned = lines.find(l => l.startsWith('LEVEL3:ALIGNED:'));
+      // Level 3: Shield defense only - movement and firing don't apply
       const firing = lines.find(l => l.startsWith('LEVEL3:FIRING:'));
-      const quiet = lines.find(l => l.startsWith('LEVEL3:QUIET:'));
       const lowhp = lines.find(l => l.startsWith('LEVEL3:LOWHP:'));
 
       const getAction = (line: string | undefined) => line ? line.split(':')[2] : 'idle';
-
-      // Movement profile
-      let moveProfile = 'idle';
-      const aboveAction = getAction(above);
-      const belowAction = getAction(below);
-      if (aboveAction === 'up' && belowAction === 'down') {
-        moveProfile = 'track';
-      } else if (aboveAction === 'up' || belowAction === 'up') {
-        moveProfile = 'up';
-      } else if (aboveAction === 'down' || belowAction === 'down') {
-        moveProfile = 'down';
-      }
-
-      // Fire profile
-      let fireProfile = 'none';
-      const fireAction = getAction(aligned);
-      if (fireAction === 'always') {
-        fireProfile = 'align';
-      }
 
       // Shield profile
       let shieldProfile = 'none';
@@ -292,7 +257,7 @@ int main() {
         shieldProfile = 'smart';
       }
 
-      return `PROFILE:${moveProfile}:${fireProfile}:${shieldProfile}`;
+      return `PROFILE:idle:none:${shieldProfile}`;
     }
   }
 }

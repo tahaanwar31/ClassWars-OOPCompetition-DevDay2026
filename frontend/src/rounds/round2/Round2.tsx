@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, RotateCcw, Shield, Target, Zap, AlertTriangle, Code2, Cpu, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalBackground from '../../components/TacticalBackground';
-import TankCodeEditor from '../../components/TankCodeEditor';
 import api from '../../api/axios';
 
 interface Checkpoint {
@@ -143,34 +142,23 @@ public:
 class MyTank : public Tank {
 public:
     void move() override {
-        // WRITE YOUR CODE HERE
-        // enemy.y gives the enemy tank's position
-        // Track the enemy to stay aligned
-
-        if (this->y < enemy.y - 2) {
-            moveDown();
-        } else if (this->y > enemy.y + 2) {
-            moveUp();
-        }
+        // Tanks don't move in Level 3
+        // Focus on defense only!
     }
 
     void attack() override {
-        // WRITE YOUR CODE HERE
-        // Call fire() when aligned with enemy
-        // Wider range is OK in Level 3 (14 units)
-
-        if (abs(this->y - enemy.y) < 14) {
-            fire();
-        }
+        // No firing in Level 3
+        // Your shield is your only weapon!
     }
 
     void defend() override {
         // WRITE YOUR CODE HERE
         // Call activateShield() to block enemy fire
         // enemy.isFiring() tells you if enemy is shooting
-        // this->hp gives your current health
+        // You have exactly 2 shield uses - time them wisely!
+        // Enemy fires at: ~2 seconds and ~5 seconds
 
-        if (enemy.isFiring() || this->hp < 40) {
+        if (enemy.isFiring()) {
             activateShield();
         }
     }
@@ -229,11 +217,11 @@ const BriefingScreen = ({ onStart }: { onStart: () => void }) => {
     { text: '══ YOUR PROGRESSION ══', type: 'header' },
     { text: '  LEVEL 1 ›  MOVEMENT      [Learn moveUp() / moveDown()]', type: 'rule' },
     { text: '  LEVEL 2 ›  FIRING        [Learn fire() / targeting]', type: 'rule' },
-    { text: '  LEVEL 3 ›  DEFENSE       [Learn activateShield() + Fight MAKAROV]', type: 'rule' },
+    { text: '  LEVEL 3 ›  DEFENSE       [Learn activateShield() - Block 2 enemy shots!]', type: 'rule' },
     { text: '', type: 'blank' },
     { text: '══ ROUND 2 STRUCTURE ══', type: 'header' },
     { text: '  Each level teaches one core mechanic.', type: 'rule' },
-    { text: '  Level 3 combines everything: your full tank vs MAKAROV.', type: 'rule' },
+    { text: '  Level 3: Both tanks fixed. Block 2 enemy shots with shield.', type: 'rule' },
     { text: '  Write code that controls move(), attack(), defend().', type: 'rule' },
     { text: '', type: 'blank' },
     { text: '  "May your code be swift and your defenses strong."', type: 'quote' },
@@ -350,6 +338,7 @@ export default function Round2() {
   const animationFrameRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
   const enemyTimeRef = useRef<number>(0);
+  const enemyShotsFiredRef = useRef<number>(0);
 
   const [gameState, setGameState] = useState<GameState>({
     level: 1,
@@ -416,16 +405,19 @@ export default function Round2() {
           { y: 75, x: 70, active: true, id: 3 }
         ];
         newState.targetsDestroyed = 0;
-        log("LEVEL 2: Destroy all 3 moving targets");
+        log("LEVEL 2: Destroy all 3 stationary targets");
       } else if (prev.level === 3) {
-        // Enemy tank starts at Y: 50, will activate shield start when low HP
-        newState.enemy.shieldCount = 0;
-        log("LEVEL 3: Defeat the enemy tank");
+        // Level 3: Fixed positions, shield defense
+        newState.player.x = 15;
+        newState.player.y = 50;
+        enemyShotsFiredRef.current = 0;
+        log("LEVEL 3: Block both enemy projectiles with your shield");
       }
 
       return newState;
     });
     setLevelComplete(false);
+    setGameOver(false);
     setExplosions([]);
   }, [log]);
 
@@ -468,19 +460,7 @@ export default function Round2() {
         }
       }
     } else if (gameStateSnapshot.level === 2) {
-      // Level 2: Move targets with sine wave and check collisions
-      newState.targets = newState.targets.map(target => ({
-        ...target,
-        y: target.y + Math.sin(enemyTimeRef.current * 0.8 + target.id) * 0.5,
-        active: target.active
-      }));
-
-      // Clamp target positions
-      newState.targets = newState.targets.map(t => ({
-        ...t,
-        y: Math.max(10, Math.min(90, t.y))
-      }));
-
+      // Level 2: Targets are stationary at fixed positions
       // Check if all targets destroyed
       const allDestroyed = newState.targets.every(t => !t.active);
       if (allDestroyed && newState.targetsDestroyed >= 3) {
@@ -489,40 +469,20 @@ export default function Round2() {
         log("ALL TARGETS ELIMINATED: LEVEL 2 COMPLETE");
       }
     } else if (gameStateSnapshot.level === 3) {
-      // Level 3: Enemy tank erratic movement + AI firing + shield when low HP
-      const baseY = 50;
-      newState.enemy.y = baseY + Math.sin(enemyTimeRef.current * 1.5) * 30 + Math.sin(enemyTimeRef.current * 2.3) * 15;
-      newState.enemy.y = Math.max(10, Math.min(90, newState.enemy.y));
+      // Level 3: Both tanks fixed position. Enemy fires 2 timed shots.
+      // Player at X:15%, Y:50%. Enemy at X:85%, Y:50%.
+      newState.enemy.y = 50;
 
-      // Enemy fires logic
-      newState.enemy.cooldown -= dt;
-      const fireThreshold = 16;
-      if (newState.enemy.cooldown <= 0 && Math.abs(newState.enemy.y - gameStateSnapshot.player.y) < fireThreshold) {
-        newState.enemy.cooldown = 0.7;
-        newState.projectiles.push({
-          x: 85,
-          y: newState.enemy.y,
-          isPlayer: false
-        });
+      // Enemy fires exactly 2 projectiles at t=2s and t=5s
+      if (enemyTimeRef.current >= 2 && enemyShotsFiredRef.current === 0) {
+        enemyShotsFiredRef.current = 1;
+        newState.projectiles.push({ x: 85, y: 50, isPlayer: false });
+        log("ENEMY FIRES PROJECTILE 1!");
       }
-
-      // Enemy shield auto-activation when low HP
-      if (gameStateSnapshot.enemy.hp < 40 && newState.enemy.shieldCount < 2 && !gameStateSnapshot.enemy.shieldActive) {
-        newState.enemy.shieldActive = true;
-        newState.enemy.shieldCount += 1;
-        newState.enemy.shield = 100;
-        newState.enemy.shieldTimer = 3.0;
-        log(`ENEMY SHIELD ACTIVE (3s, USE ${newState.enemy.shieldCount}/2)`);
-      }
-
-      // Frame-based enemy shield countdown
-      if (gameStateSnapshot.enemy.shieldActive && gameStateSnapshot.enemy.shieldTimer > 0) {
-        newState.enemy.shieldTimer = gameStateSnapshot.enemy.shieldTimer - dt;
-        if (newState.enemy.shieldTimer <= 0) {
-          newState.enemy.shieldActive = false;
-          newState.enemy.shield = 0;
-          newState.enemy.shieldTimer = 0;
-        }
+      if (enemyTimeRef.current >= 5 && enemyShotsFiredRef.current === 1) {
+        enemyShotsFiredRef.current = 2;
+        newState.projectiles.push({ x: 85, y: 50, isPlayer: false });
+        log("ENEMY FIRES PROJECTILE 2!");
       }
     }
 
@@ -532,17 +492,25 @@ export default function Round2() {
   const gameLoop = useCallback((timestamp: number) => {
     if (!gameState.running) return;
 
-    const dt = (timestamp - lastTimeRef.current) / 1000;
+    const rawDt = (timestamp - lastTimeRef.current) / 1000;
+    const dt = Math.min(rawDt, 0.05); // Clamp to 50ms to prevent teleportation on tab switch
     lastTimeRef.current = timestamp;
 
     setGameState(prev => {
+      if (!prev.running) return prev; // Guard against stale closure running extra frames
+
       const playerMoveSpeed = prev.level === 1 ? 25 : 60;
       const playerMoveSpeedX = 30; // Horizontal speed for Level 1
 
       // ===== STEP 1: COMPUTE PLAYER MOVEMENT FIRST =====
       let newPlayerX = prev.player.x;
       let newPlayerY = prev.player.y;
-      if (prev.playerStrategy.moveMode === 'track') {
+
+      // Level 3: No movement - tanks are fixed
+      if (prev.level === 3) {
+        newPlayerX = 15;
+        newPlayerY = 50;
+      } else if (prev.playerStrategy.moveMode === 'track') {
         if (prev.level === 1) {
           const checkpoint = prev.checkpoints?.[prev.currentCheckpoint!];
           if (checkpoint && !checkpoint.visited) {
@@ -589,25 +557,23 @@ export default function Round2() {
       const movedPrev = { ...prev, player: { ...prev.player, x: newPlayerX, y: newPlayerY } };
       let newState = calculateLevelLogic(movedPrev, dt);
 
-      // ===== PLAYER FIRING & SHIELD =====
+      // ===== PLAYER FIRING =====
       newState.player.cooldown -= dt;
       let shouldFire = false;
 
-      if (prev.playerStrategy.fireMode === 'always') {
-        shouldFire = true;
-      } else if (prev.playerStrategy.fireMode === 'align') {
-        if (newState.level === 3) {
-          // Fire when aligned with enemy
-          if (Math.abs(newState.enemy.y - newState.player.y) < 14) {
-            shouldFire = true;
-          }
-        } else if (newState.level === 2) {
-          // Fire when aligned with any target
-          const closestTarget = newState.targets
-            .filter(t => t.active)
-            .sort((a, b) => Math.abs(a.y - newState.player.y) - Math.abs(b.y - newState.player.y))[0];
-          if (closestTarget && Math.abs(closestTarget.y - newState.player.y) < 10) {
-            shouldFire = true;
+      // Level 3: No firing - shield only
+      if (prev.level !== 3) {
+        if (prev.playerStrategy.fireMode === 'always') {
+          shouldFire = true;
+        } else if (prev.playerStrategy.fireMode === 'align') {
+          if (newState.level === 2) {
+            // Fire when aligned with any target
+            const closestTarget = newState.targets
+              .filter(t => t.active)
+              .sort((a, b) => Math.abs(a.y - newState.player.y) - Math.abs(b.y - newState.player.y))[0];
+            if (closestTarget && Math.abs(closestTarget.y - newState.player.y) < 8) {
+              shouldFire = true;
+            }
           }
         }
       }
@@ -623,24 +589,24 @@ export default function Round2() {
 
       // ===== PLAYER SHIELD (Level 3) =====
       if (prev.playerStrategy.shieldMode === 'smart' && newState.level === 3) {
-        // Auto-activate shield when enemy projectile is incoming
+        // 1) Countdown FIRST so expired shields clear before auto-activate
+        if (newState.player.shieldActive && newState.player.shieldTimer > 0) {
+          newState.player.shieldTimer = newState.player.shieldTimer - dt;
+          if (newState.player.shieldTimer <= 0) {
+            newState.player.shieldActive = false;
+            newState.player.shieldTimer = 0;
+          }
+        }
+        // 2) Auto-activate shield when enemy projectile is incoming
         if (!newState.player.shieldActive && newState.player.shieldCount < 2) {
           const incomingProjectile = newState.projectiles.find(p =>
-            !p.isPlayer && p.x <= 35 && Math.abs(p.y - newState.player.y) < 15
+            !p.isPlayer && p.x <= 40 && Math.abs(p.y - newState.player.y) < 20
           );
           if (incomingProjectile) {
             newState.player.shieldActive = true;
             newState.player.shieldCount += 1;
             newState.player.shieldTimer = 3.0;
             log(`SHIELD ACTIVATED (${newState.player.shieldCount}/2)`);
-          }
-        }
-        // Frame-based shield countdown
-        if (newState.player.shieldActive && newState.player.shieldTimer > 0) {
-          newState.player.shieldTimer = newState.player.shieldTimer - dt;
-          if (newState.player.shieldTimer <= 0) {
-            newState.player.shieldActive = false;
-            newState.player.shieldTimer = 0;
           }
         }
       }
@@ -677,31 +643,20 @@ export default function Round2() {
                 }
                 return false;
               }
-            } else if (prev.level === 3) {
-              // Level 3: Check hit on enemy
-              const hitEnemy = p.x >= 80 && p.x <= 100 && Math.abs(p.y - newState.enemy.y) < 14;
-              if (hitEnemy) {
-                const expId = Date.now() + Math.random();
-                setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
-                setTimeout(() => {
-                  setExplosions(prev => prev.filter(e => e.id !== expId));
-                }, 500);
-                if (!newState.enemy.shieldActive) {
-                  newState.enemy.hp -= 10;
-                  log(`HIT! Enemy HP: ${Math.max(0, newState.enemy.hp)}%`);
-                } else {
-                  log("BLOCKED BY SHIELD!");
-                }
-                return false;
-              }
             }
+            // Level 3: No player projectiles, skip
           } else {
             // Enemy projectile (Level 3 only)
             if (prev.level === 3) {
-              const hitPlayer = p.x <= 20 && p.x >= 0 && Math.abs(p.y - newState.player.y) < 12;
+              const hitPlayer = p.x <= 20 && p.x >= 0 && Math.abs(p.y - newState.player.y) < 15;
               if (hitPlayer) {
                 if (newState.player.shieldActive) {
-                  log("YOUR SHIELD BLOCKED!");
+                  const expId = Date.now() + Math.random();
+                  setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                  setTimeout(() => {
+                    setExplosions(prev => prev.filter(e => e.id !== expId));
+                  }, 500);
+                  log("SHIELD BLOCKED PROJECTILE!");
                   return false;
                 }
                 const expId = Date.now() + Math.random();
@@ -709,7 +664,8 @@ export default function Round2() {
                 setTimeout(() => {
                   setExplosions(prev => prev.filter(e => e.id !== expId));
                 }, 500);
-                newState.player.hp -= 10;
+                newState.player.hp -= 50;
+                log("DIRECT HIT! Your tank took damage!");
                 return false;
               }
             }
@@ -724,10 +680,16 @@ export default function Round2() {
         newState.running = false;
         setGameOver(true);
         log("MISSION FAILED: TANK DESTROYED");
-      } else if (prev.level === 3 && newState.enemy.hp <= 0) {
+      } else if (prev.level === 3 && enemyShotsFiredRef.current >= 2 && !newState.projectiles.some(p => !p.isPlayer) && newState.player.hp > 0 && newState.player.hp === 100) {
+        // Level 3: Win when both projectiles resolved, player took no damage (fully blocked)
         newState.running = false;
         setLevelComplete(true);
-        log("ENEMY DEFEATED: LEVEL 3 COMPLETE");
+        log("ALL PROJECTILES BLOCKED: LEVEL 3 COMPLETE!");
+      } else if (prev.level === 3 && enemyShotsFiredRef.current >= 2 && !newState.projectiles.some(p => !p.isPlayer) && newState.player.hp < 100) {
+        // Level 3: Both shots fired, all projectiles resolved, but player took damage
+        newState.running = false;
+        setGameOver(true);
+        log("MISSION FAILED: DID NOT BLOCK ALL PROJECTILES");
       }
 
       return newState;
@@ -740,6 +702,7 @@ export default function Round2() {
     setGameState(prev => ({ ...prev, running: true, deployed: true }));
     lastTimeRef.current = performance.now();
     enemyTimeRef.current = 0;
+    enemyShotsFiredRef.current = 0;
     levelStartTimeRef.current = Date.now();
     log(`LEVEL ${gameState.level} STARTED...`);
   }, [gameState.level, log]);
@@ -820,14 +783,15 @@ export default function Round2() {
             setCompiling(false);
             // Atomic reset+strategy in ONE state update to avoid race conditions
             setGameState(prev => {
+              const isLevel3 = prev.level === 3;
               const newState = {
                 ...prev,
                 running: false,
                 deployed: false,
-                player: { x: 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+                player: { x: isLevel3 ? 15 : 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
                 enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
                 projectiles: [],
-                playerStrategy: { moveMode, fireMode, shieldMode },
+                playerStrategy: { moveMode: isLevel3 ? 'idle' : moveMode, fireMode: isLevel3 ? 'none' : fireMode, shieldMode },
                 checkpoints: [
                   { y: 20, visited: false },
                   { y: 50, visited: false },
@@ -930,14 +894,16 @@ export default function Round2() {
 
   const retryGame = useCallback(() => {
     setGameOver(false);
+    enemyShotsFiredRef.current = 0;
     // Preserve current strategy when retrying
     setGameState(prev => {
       const strategy = prev.playerStrategy;
+      const isLevel3 = prev.level === 3;
       const newState = {
         ...prev,
         running: false,
         deployed: false,
-        player: { x: 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+        player: { x: isLevel3 ? 15 : 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
         enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
         projectiles: [],
         playerStrategy: strategy,
@@ -1069,69 +1035,50 @@ export default function Round2() {
             transition={{ delay: 0.1 }}
             className="lg:col-span-1"
           >
-            <div className="relative border border-[#39ff14]/25 bg-[#0a0a0a]/90 backdrop-blur box-glow shimmer h-[600px] flex flex-col overflow-hidden">
+            <div className="relative border border-[#39ff14]/25 bg-[#0a0a0a]/90 backdrop-blur p-4 box-glow shimmer h-[600px] flex flex-col">
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#39ff14] to-transparent" />
               <HudCorners size="sm" />
 
-              {/* IDE top bar */}
-              <div className="flex items-center justify-between px-4 py-2 border-b border-[#39ff14]/15 bg-[#0a0e14]">
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#39ff14]/20">
                 <div className="flex items-center gap-2">
-                  <Code2 className="w-4 h-4 text-cyber-red" />
-                  <h2 className="text-xs font-bold tracking-[0.2em] text-cyber-red">CODE DEPLOYMENT</h2>
-                  <span className="text-[10px] text-[#39ff14]/30 ml-1">LVL {gameState.level}</span>
+                  <Code2 className="w-5 h-5 text-cyber-red" />
+                  <h2 className="text-sm font-bold tracking-[0.2em] text-cyber-red">CODE DEPLOYMENT</h2>
                 </div>
-                <button
-                  onClick={() => setCode(getLevelCode(gameState.level))}
-                  className="text-[10px] px-2 py-0.5 border border-[#39ff14]/30 text-[#39ff14]/70 hover:bg-[#39ff14]/10 flex items-center gap-1 transition-all"
-                  title="Reset to starter code"
-                >
-                  <RotateCcw className="w-2.5 h-2.5" />
-                  RESET
-                </button>
-              </div>
-
-              {/* File tab bar */}
-              <div className="flex items-center gap-0 mb-0 border-b border-[#39ff14]/15">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0d1117] border-r border-[#39ff14]/15 text-[10px] font-mono">
-                  <div className="w-2 h-2 rounded-full bg-[#ff003c]" />
-                  <span className="text-[#39ff14]/70">MyTank.cpp</span>
-                </div>
-                <div className="flex items-center gap-2 ml-auto px-3 py-1 text-[9px] font-mono text-[#39ff14]/30">
-                  <span>C++17</span>
-                  <span>•</span>
-                  <span>UTF-8</span>
-                  <span>•</span>
-                  <span className="text-cyan-400/50">TAB=indent  Ctrl+Space=hints</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[#39ff14]/50">LVL {gameState.level}</span>
+                  <button
+                    onClick={() => setCode(getLevelCode(gameState.level))}
+                    className="text-xs px-2 py-1 border border-[#39ff14]/40 text-[#39ff14] hover:bg-[#39ff14]/10 flex items-center gap-1 transition-all"
+                    title="Reset to starter code"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    RESET
+                  </button>
                 </div>
               </div>
 
               {/* Level Objective Banner */}
-              <div className="px-3 py-1.5 bg-[#0d1117] border-b border-[#39ff14]/10 text-[10px] font-mono flex items-center gap-2">
-                <span className="text-[#ff003c]">//</span>
-                <span className="text-[#39ff14]/60">
-                  {gameState.level === 1 && 'OBJECTIVE: Navigate to checkpoints at Y:20, 50, 80 — use moveUp() / moveDown()'}
-                  {gameState.level === 2 && 'OBJECTIVE: Track & destroy 3 targets — use enemy.y, fire() when aligned'}
-                  {gameState.level === 3 && 'OBJECTIVE: Defeat MAKAROV — use fire(), activateShield() twice to block shots'}
-                </span>
+              <div className="mb-2 px-2 py-1.5 bg-black/50 border border-[#39ff14]/15 text-[10px] text-[#39ff14]/70">
+                {gameState.level === 1 && '> OBJECTIVE: Navigate to checkpoints at Y: 20, 50, 80. Use moveUp() and moveDown().'}
+                {gameState.level === 2 && '> OBJECTIVE: Track and destroy 3 stationary targets. Use enemy.y and fire().'}
+                {gameState.level === 3 && '> OBJECTIVE: Block 2 enemy projectiles using activateShield(). Enemy fires at ~2s and ~5s.'}
               </div>
 
-              {/* CodeMirror Editor */}
-              <div className="flex-1 overflow-hidden border border-[#39ff14]/10" style={{ minHeight: 0 }}>
-                <TankCodeEditor
-                  value={code}
-                  onChange={setCode}
-                  height="100%"
-                />
-              </div>
+              <textarea
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="flex-1 bg-black/80 border border-[#39ff14]/20 text-[#00ff00] font-mono text-xs leading-relaxed p-3 resize-none focus:border-[#ff003c] focus:outline-none overflow-auto"
+                spellCheck={false}
+                placeholder="Write your C++ tank code here..."
+              />
 
-              {/* Compile button */}
               <button
                 onClick={submitCode}
                 disabled={compiling || gameState.running}
-                className="w-full px-4 py-3 bg-[#ff003c] text-black font-black tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm border-t border-[#ff003c]/30"
+                className="mt-3 w-full px-4 py-3 bg-[#ff003c] text-black font-black tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm"
               >
                 <Play className="w-4 h-4 group-hover:animate-pulse" />
-                {compiling ? compileStatus : 'COMPILE & RUN'}
+                COMPILE & RUN
               </button>
             </div>
           </motion.div>
@@ -1161,7 +1108,7 @@ export default function Round2() {
                     <span className="text-cyan-400">TARGETS: {gameState.targetsDestroyed}/3</span>
                   )}
                   {gameState.level === 3 && (
-                    <span className="text-red-400">ENEMY: {Math.floor(gameState.enemy.hp)}%</span>
+                    <span className="text-cyan-400">SHIELD: {gameState.player.shieldCount}/2</span>
                   )}
                   <span className="text-[#39ff14]/60">HP: {Math.floor(gameState.player.hp)}%</span>
                 </div>
@@ -1177,8 +1124,9 @@ export default function Round2() {
                   <line x1="0" y1="80%" x2="100%" y2="80%" stroke="#39ff14" strokeWidth="0.5" strokeDasharray="4,8" />
                   {/* Vertical guide lines */}
                   <line x1="15%" y1="0" x2="15%" y2="100%" stroke="#39ff14" strokeWidth="0.5" opacity="0.3" />
+                  <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#39ff14" strokeWidth="0.5" strokeDasharray="3,6" opacity="0.3" />
                   <line x1="70%" y1="0" x2="70%" y2="100%" stroke="#ff003c" strokeWidth="0.5" opacity="0.3" />
-                  <line x1="85%" y1="0" x2="85%" y2="100%" stroke="#39ff14" strokeWidth="0.5" opacity="0.3" />
+                  <line x1="85%" y1="0" x2="85%" y2="100%" stroke="#ff003c" strokeWidth="0.5" opacity="0.3" />
                 </svg>
 
                 {/* Player HP Bar - compact bottom-left */}
@@ -1193,17 +1141,14 @@ export default function Round2() {
                   <span className="text-[9px] font-mono" style={{color: gameState.player.hp > 60 ? '#39ff14' : gameState.player.hp > 30 ? '#f59e0b' : '#ef4444'}}>{Math.floor(gameState.player.hp)}%</span>
                 </div>
 
-                {/* Enemy HP Bar - compact bottom-right (Level 3) */}
+                {/* Enemy Status - compact bottom-right (Level 3) */}
                 {gameState.level === 3 && (
                   <div className="absolute bottom-2 right-2 z-20 flex items-center gap-2">
-                    <span className="text-[9px] font-mono" style={{color: '#ff003c'}}>{Math.floor(gameState.enemy.hp)}%</span>
-                    <div className="w-24 h-1.5 bg-black/80 border border-red-400/20">
-                      <div className="h-full transition-all duration-300" style={{
-                        width: `${gameState.enemy.hp}%`,
-                        backgroundColor: '#ff003c'
-                      }} />
-                    </div>
                     <span className="text-[9px] text-red-400/70 font-mono">FOE</span>
+                    <div className="w-24 h-1.5 bg-black/80 border border-red-400/20 flex items-center">
+                      <div className="h-full transition-all duration-300 bg-red-500" style={{ width: '100%' }} />
+                    </div>
+                    <span className="text-[9px] text-red-400 font-mono">READY</span>
                   </div>
                 )}
 
@@ -1356,7 +1301,7 @@ export default function Round2() {
                     transform: 'translate(-50%, -50%)',
                     width: '64px',
                     height: '64px',
-                    transition: 'left 0.04s linear, top 0.04s linear'
+                    willChange: 'left, top'
                   }}
                 >
                   <svg viewBox="0 0 100 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 10px rgba(0,255,0,0.8))' }}>
@@ -1383,12 +1328,12 @@ export default function Round2() {
                   <div
                     className="absolute z-10"
                     style={{
-                      left: '92%',
+                      left: '85%',
                       top: `${gameState.enemy.y}%`,
                       transform: 'translate(-50%, -50%) scaleX(-1)',
                       width: '64px',
                       height: '64px',
-                      transition: 'top 0.04s linear'
+                      willChange: 'top'
                     }}
                   >
                     <svg viewBox="0 0 100 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 10px rgba(255,0,0,0.8))' }}>
@@ -1513,7 +1458,7 @@ export default function Round2() {
               <div className="text-[#39ff14] font-mono font-bold">
                 {gameState.level === 1 && 'REACH ALL CHECKPOINTS'}
                 {gameState.level === 2 && 'DESTROY ALL TARGETS'}
-                {gameState.level === 3 && 'DEFEAT MAKAROV'}
+                {gameState.level === 3 && 'BLOCK ALL PROJECTILES'}
               </div>
             </div>
           </div>
