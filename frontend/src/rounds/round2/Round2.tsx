@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, RotateCcw, Shield, Target, Zap, AlertTriangle, Code2, Cpu, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalBackground from '../../components/TacticalBackground';
+import TankCodeEditor from '../../components/TankCodeEditor';
 import api from '../../api/axios';
 
 interface Checkpoint {
@@ -1064,13 +1065,9 @@ export default function Round2() {
                 {gameState.level === 3 && '> OBJECTIVE: Block 2 enemy projectiles using activateShield(). Enemy fires at ~2s and ~5s.'}
               </div>
 
-              <textarea
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="flex-1 bg-black/80 border border-[#39ff14]/20 text-[#00ff00] font-mono text-xs leading-relaxed p-3 resize-none focus:border-[#ff003c] focus:outline-none overflow-auto"
-                spellCheck={false}
-                placeholder="Write your C++ tank code here..."
-              />
+              <div className="flex-1 overflow-hidden">
+                <TankCodeEditor value={code} onChange={setCode} height="100%" />
+              </div>
 
               <button
                 onClick={submitCode}
@@ -1474,15 +1471,32 @@ export default function Round2() {
           <div className="text-[9px] text-[#39ff14]/30 mb-3">
             <span className="text-[#39ff14]/50">$</span> cat /sys/architects
           </div>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Cpu className="w-3 h-3 text-[#39ff14]/60" />
-            <span className="text-[#39ff14]/80 font-bold text-[11px] tracking-[0.15em] text-glow">TAHA ANWAR</span>
-            <span className="text-[7px] text-[#39ff14]/35 border border-[#39ff14]/15 px-1.5 py-px tracking-[0.2em]">ROOT</span>
+          {/* Tier 1 */}
+          <div className="flex items-center justify-center gap-4 flex-wrap mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono" style={{color:'rgba(251,191,36,0.7)'}}>◈</span>
+              <span className="font-black text-[11px] tracking-[0.18em]" style={{color:'#fbbf24', textShadow:'0 0 10px rgba(251,191,36,0.8)'}}>ZOHAIR SHAMSI</span>
+              <span className="text-[6px] font-mono px-1 py-px tracking-[0.2em]" style={{color:'rgba(251,191,36,0.5)', border:'1px solid rgba(251,191,36,0.22)'}}>&lt;ARCH&gt;</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono" style={{color:'rgba(251,191,36,0.7)'}}>◈</span>
+              <span className="font-black text-[11px] tracking-[0.18em]" style={{color:'#fbbf24', textShadow:'0 0 10px rgba(251,191,36,0.8)'}}>UMER KHAN</span>
+              <span className="text-[6px] font-mono px-1 py-px tracking-[0.2em]" style={{color:'rgba(251,191,36,0.5)', border:'1px solid rgba(251,191,36,0.22)'}}>&lt;ARCH&gt;</span>
+            </div>
           </div>
+          <div className="text-[8px] text-white/10 tracking-widest text-center my-0.5">────────────────────</div>
+          {/* Tier 2 */}
+          <div className="flex items-center justify-center gap-1.5 mb-1.5">
+            <span className="text-[13px] font-mono font-bold" style={{color:'rgba(0,229,255,0.75)'}}>{'>#'}</span>
+            <span className="font-bold text-[11px] tracking-[0.15em]" style={{color:'#00e5ff', textShadow:'0 0 8px rgba(0,229,255,0.8)'}}>TAHA ANWAR</span>
+            <span className="text-[7px] font-mono border border-[#00e5ff]/20 px-1.5 py-px tracking-[0.2em]" style={{color:'rgba(0,229,255,0.45)'}}>#ROOT</span>
+          </div>
+          <div className="text-[8px] text-white/10 tracking-widest text-center my-0.5">────────────────────</div>
+          {/* Tier 3 */}
           <div className="flex items-center justify-center gap-4 text-[10px]">
-            <span className="text-[#39ff14]/50 tracking-[0.1em]">MASHAL ZAHRA <span className="text-[#39ff14]/25 text-[7px] border border-[#39ff14]/10 px-1 py-px">SUDO</span></span>
+            <span className="flex items-center gap-1 text-[#39ff14]/80 tracking-[0.1em]"><span className="font-mono text-[#39ff14]/50">▸</span> RUMESA IQBAL <span className="text-[#39ff14]/40 text-[7px] font-mono border border-[#39ff14]/15 px-1 py-px">::DEV</span></span>
             <span className="text-[#39ff14]/15">│</span>
-            <span className="text-[#39ff14]/50 tracking-[0.1em]">RUMESA IQBAL <span className="text-[#39ff14]/25 text-[7px] border border-[#39ff14]/10 px-1 py-px">SUDO</span></span>
+            <span className="flex items-center gap-1 text-[#39ff14]/80 tracking-[0.1em]"><span className="font-mono text-[#39ff14]/50">▸</span> MASHAL ZAHRA <span className="text-[#39ff14]/40 text-[7px] font-mono border border-[#39ff14]/15 px-1 py-px">::DEV</span></span>
           </div>
         </motion.div>
       </div>

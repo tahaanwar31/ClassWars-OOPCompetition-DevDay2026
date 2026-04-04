@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { cpp } from '@codemirror/lang-cpp';
-import { oneDark } from '@codemirror/theme-one-dark';
 import { autocompletion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { EditorView, keymap } from '@codemirror/view';
 import { indentWithTab } from '@codemirror/commands';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 
 // ─── Custom Tank class autocomplete entries ───────────────────────────────────
 function tankCompletions(context: CompletionContext): CompletionResult | null {
@@ -73,85 +74,174 @@ function tankCompletions(context: CompletionContext): CompletionResult | null {
   };
 }
 
-// ─── Custom theme overrides (on top of oneDark) ───────────────────────────────
+// ─── Vibrant syntax highlight style ──────────────────────────────────────────
+const tankHighlightStyle = HighlightStyle.define([
+  // Keywords: electric cyan
+  { tag: t.keyword,                color: '#00e5ff', fontWeight: 'bold' },
+  { tag: t.controlKeyword,         color: '#00e5ff', fontWeight: 'bold' },
+  { tag: t.definitionKeyword,      color: '#00e5ff', fontWeight: 'bold' },
+  { tag: t.moduleKeyword,          color: '#00e5ff', fontWeight: 'bold' },
+  // Types & class names: vivid purple
+  { tag: t.typeName,               color: '#c792ea', fontWeight: 'bold' },
+  { tag: t.className,              color: '#c792ea', fontWeight: 'bold' },
+  { tag: t.definition(t.typeName), color: '#c792ea', fontWeight: 'bold' },
+  // Function & method names: bright yellow-green
+  { tag: t.function(t.variableName), color: '#ffe57f', fontWeight: 'bold' },
+  { tag: t.function(t.propertyName), color: '#ffe57f' },
+  // Variables: white
+  { tag: t.variableName,           color: '#eeffff' },
+  { tag: t.propertyName,           color: '#f07178' },  // hot coral/pink for members
+  // Strings: vivid orange
+  { tag: t.string,                 color: '#ffcb6b' },
+  { tag: t.special(t.string),      color: '#ffcb6b' },
+  // Numbers: hot pink
+  { tag: t.number,                 color: '#ff79c6' },
+  // Operators & punctuation: bright cyan
+  { tag: t.operator,               color: '#89ddff' },
+  { tag: t.punctuation,            color: '#89ddff' },
+  { tag: t.bracket,                color: '#ffcb6b' },
+  // Comments: bright neon green italic
+  { tag: t.comment,                color: '#39ff14', fontStyle: 'italic' },
+  { tag: t.lineComment,            color: '#39ff14', fontStyle: 'italic' },
+  { tag: t.blockComment,           color: '#39ff14', fontStyle: 'italic' },
+  // Preprocessor / macros: magenta
+  { tag: t.processingInstruction,  color: '#ff79c6', fontWeight: 'bold' },
+  { tag: t.meta,                   color: '#ff79c6' },
+  // Boolean / null / undefined: cyan
+  { tag: t.bool,                   color: '#00e5ff', fontWeight: 'bold' },
+  { tag: t.null,                   color: '#00e5ff' },
+]);
+
+// ─── Editor UI theme ──────────────────────────────────────────────────────────
 const tankEditorTheme = EditorView.theme({
   '&': {
     fontSize: '13px',
     fontFamily: '"Fira Code", "Cascadia Code", "JetBrains Mono", "Courier New", monospace',
-    backgroundColor: '#0d1117 !important',
-    borderRadius: '0 0 4px 4px',
+    backgroundColor: '#060a0f !important',
   },
   '.cm-scroller': {
     overflow: 'auto',
-    lineHeight: '1.7',
+    lineHeight: '1.75',
+    backgroundColor: '#060a0f',
   },
   '.cm-content': {
     padding: '12px 0',
     caretColor: '#ff003c',
+    backgroundColor: '#060a0f',
+    color: '#eeffff',
   },
   '.cm-cursor': {
     borderLeftColor: '#ff003c !important',
     borderLeftWidth: '2px',
   },
+  // Active line: subtle red tint
   '.cm-activeLine': {
-    backgroundColor: 'rgba(57,255,20,0.04) !important',
+    backgroundColor: 'rgba(255,0,60,0.07) !important',
   },
   '.cm-activeLineGutter': {
-    backgroundColor: 'rgba(57,255,20,0.08) !important',
-    color: '#39ff14 !important',
+    backgroundColor: 'rgba(255,0,60,0.12) !important',
+    color: '#ff003c !important',
+    fontWeight: 'bold',
   },
+  // Gutter
   '.cm-gutters': {
-    backgroundColor: '#0a0e14 !important',
-    borderRight: '1px solid rgba(57,255,20,0.12)',
-    color: '#3a3f4b',
+    backgroundColor: '#03070c !important',
+    borderRight: '1px solid rgba(0,229,255,0.18)',
+    color: '#3a4a5a',
+    minWidth: '40px',
   },
   '.cm-lineNumbers .cm-gutterElement': {
-    color: '#3d4450',
-    paddingRight: '12px',
+    color: '#4a6070',
+    paddingRight: '14px',
+    paddingLeft: '6px',
   },
+  // Selection
   '.cm-selectionBackground': {
-    backgroundColor: 'rgba(255,0,60,0.20) !important',
+    backgroundColor: 'rgba(0,229,255,0.18) !important',
   },
   '&.cm-focused .cm-selectionBackground': {
-    backgroundColor: 'rgba(255,0,60,0.25) !important',
+    backgroundColor: 'rgba(0,229,255,0.22) !important',
+  },
+  // Bracket matching: blazing yellow
+  '.cm-matchingBracket': {
+    backgroundColor: 'rgba(255,203,107,0.25) !important',
+    outline: '1px solid #ffcb6b',
+    color: '#ffcb6b !important',
+    borderRadius: '2px',
+  },
+  // Search matches
+  '.cm-searchMatch': {
+    backgroundColor: 'rgba(255,121,198,0.25)',
+    outline: '1px solid #ff79c6',
+  },
+  '.cm-searchMatch.cm-searchMatch-selected': {
+    backgroundColor: 'rgba(255,121,198,0.5)',
+  },
+  // Autocomplete dropdown
+  '.cm-tooltip': {
+    backgroundColor: '#0b1018 !important',
+    border: '1px solid rgba(0,229,255,0.4) !important',
+    borderRadius: '6px',
+    boxShadow: '0 0 20px rgba(0,229,255,0.15), 0 8px 32px rgba(0,0,0,0.9)',
   },
   '.cm-tooltip-autocomplete': {
-    backgroundColor: '#161b22 !important',
-    border: '1px solid rgba(57,255,20,0.3) !important',
-    borderRadius: '4px',
+    backgroundColor: '#0b1018 !important',
+    border: '1px solid rgba(0,229,255,0.4) !important',
+    borderRadius: '6px',
     fontFamily: '"Fira Code", monospace',
     fontSize: '12px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.8)',
+    boxShadow: '0 0 20px rgba(0,229,255,0.15), 0 8px 32px rgba(0,0,0,0.9)',
+  },
+  '.cm-tooltip-autocomplete ul': {
+    fontFamily: '"Fira Code", monospace',
   },
   '.cm-tooltip-autocomplete ul li': {
-    padding: '4px 10px !important',
+    padding: '5px 12px !important',
+    color: '#c5d0e0',
+    borderBottom: '1px solid rgba(255,255,255,0.04)',
   },
   '.cm-tooltip-autocomplete ul li[aria-selected]': {
-    backgroundColor: 'rgba(255,0,60,0.25) !important',
-    color: '#ff003c !important',
+    backgroundColor: 'rgba(0,229,255,0.15) !important',
+    color: '#00e5ff !important',
+  },
+  '.cm-completionIcon': {
+    opacity: '0.8',
   },
   '.cm-completionLabel': {
-    color: '#39ff14',
+    color: '#eeffff',
+    fontWeight: '600',
   },
   '.cm-completionDetail': {
-    color: '#6e7681',
-    marginLeft: '8px',
+    color: '#00e5ff',
+    marginLeft: '10px',
     fontSize: '10px',
+    opacity: '0.8',
   },
   '.cm-completionInfo': {
-    backgroundColor: '#0d1117 !important',
-    border: '1px solid rgba(57,255,20,0.2) !important',
-    padding: '6px 10px',
+    backgroundColor: '#0b1018 !important',
+    border: '1px solid rgba(0,229,255,0.3) !important',
+    padding: '8px 12px',
     fontSize: '11px',
-    color: '#8b949e',
+    color: '#89b4d0',
     borderRadius: '4px',
+    maxWidth: '280px',
   },
-  '.cm-matchingBracket': {
-    backgroundColor: 'rgba(57,255,20,0.15)',
-    color: '#39ff14 !important',
-    borderBottom: '1px solid #39ff14',
+  // Scrollbar
+  '.cm-scroller::-webkit-scrollbar': {
+    width: '6px',
+    height: '6px',
   },
-});
+  '.cm-scroller::-webkit-scrollbar-track': {
+    background: '#060a0f',
+  },
+  '.cm-scroller::-webkit-scrollbar-thumb': {
+    background: 'rgba(0,229,255,0.3)',
+    borderRadius: '3px',
+  },
+  '.cm-scroller::-webkit-scrollbar-thumb:hover': {
+    background: 'rgba(0,229,255,0.6)',
+  },
+}, { dark: true });
 
 interface TankCodeEditorProps {
   value: string;
@@ -162,6 +252,7 @@ interface TankCodeEditorProps {
 const TankCodeEditor: React.FC<TankCodeEditorProps> = ({ value, onChange, height = '100%' }) => {
   const extensions = [
     cpp(),
+    syntaxHighlighting(tankHighlightStyle),
     autocompletion({ override: [tankCompletions] }),
     keymap.of([indentWithTab]),
     tankEditorTheme,
@@ -172,7 +263,7 @@ const TankCodeEditor: React.FC<TankCodeEditorProps> = ({ value, onChange, height
     <CodeMirror
       value={value}
       height={height}
-      theme={oneDark}
+      theme="none"
       extensions={extensions}
       onChange={onChange}
       style={{ height: '100%', overflow: 'hidden' }}
@@ -184,10 +275,10 @@ const TankCodeEditor: React.FC<TankCodeEditorProps> = ({ value, onChange, height
         indentOnInput: true,
         bracketMatching: true,
         closeBrackets: true,
-        autocompletion: false, // we supply our own
+        autocompletion: false,
         highlightActiveLine: true,
         highlightSelectionMatches: true,
-        syntaxHighlighting: true,
+        syntaxHighlighting: false, // we supply our own
         tabSize: 4,
       }}
     />

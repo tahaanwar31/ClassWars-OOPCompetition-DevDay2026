@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Question } from '../../data/questions';
-import { Terminal, ShieldAlert, Crosshair, Clock, AlertTriangle, Power, Cpu, Database, Target } from 'lucide-react';
+import { Terminal, ShieldAlert, Crosshair, Clock, AlertTriangle, Power, Cpu, Database, Target, Zap, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalBackground from '../../components/TacticalBackground';
 import api from '../../api/axios';
@@ -223,349 +223,308 @@ const ROUND2_INSIGHTS: {
   [key: number]: { title: string; description: string; snippet?: string; isSnippet: boolean };
 } = {
   1: {
-    title: '🎯 ROUND 2: LEVEL 1 - MOVEMENT MECHANICS',
+    title: '🎯 ROUND 2: STRATEGIC INTEL — WHAT AWAITS YOU',
     description: `
 ══════════════════════════════════════════════════════════════
 
-YOUR FIRST CHALLENGE: LEARN HOW TO MOVE YOUR TANK
+INTEL UNLOCKED — ROUND 1 COMPLETE
 
-In Round 2 Level 1, your tank will face its first test:
-Navigate through checkpoints positioned at different heights.
+Round 1 gives you a strategic advantage in Round 2 by
+providing important intel; each level you clear unlocks
+useful information for what lies ahead.
 
-═══ THE OBJECTIVE ═══
-Move your tank UP and DOWN to reach each checkpoint:
-  • CHECKPOINT 1 at Y: 20 (upper area)
-  • CHECKPOINT 2 at Y: 50 (middle area)  
-  • CHECKPOINT 3 at Y: 80 (lower area)
+═══ WHAT IS ROUND 2? ═══
+In Round 2, you face MAKAROV — the enemy commander
+controlling a tank — while ClassWars gives you your own.
+Your objective: DEFEAT THE ENEMY using OOP logic.
 
-═══ WHAT YOU'LL LEARN ═══
-→ moveUp() - Move your tank upward
-→ moveDown() - Move your tank downward
-→ How to track target positions
-→ How to navigate systematically
+═══ HOW IT WORKS ═══
+There is a base class called Tank which is inherited
+by a child class. The child class overrides three methods:
 
-═══ KEY FUNCTIONS ═══
-if (this->y < targetY) {
-    moveDown();  // Move toward target
-} else if (this->y > targetY) {
-    moveUp();    // Move toward target
-}
+  → move()            — Move your tank strategically
+  → attack() / fire() — Fire at the enemy
+  → defend()          — Block incoming projectiles
 
-RESULT: You'll master tank movement control!
+You must implement your own logic inside these methods
+to attack effectively, defend against enemy fire,
+and move with precision.
+
+═══ YOUR GOAL ═══
+Defeat the enemy by combining:
+  • Smart movement
+  • Precise attack timing
+  • Efficient defense
+
+Each Round 2 level builds on the last.
+Study the intel from every Round 1 level carefully.
+
 ════════════════════════════════════════════════════════════════
     `,
     isSnippet: false,
   },
   2: {
-    title: '🔥 ROUND 2: LEVEL 2 - FIRING MECHANICS',
-    description: `
-══════════════════════════════════════════════════════════════
+    title: '� ROUND 2 LEVEL 1 — CHECKPOINT NAVIGATION CODE',
+    description: `This code will help you clear Level 1 of Round 2, where you have to cross through all 3 checkpoints on the screen.`,
+    snippet: `#include <iostream>        // Includes input-output library
+#include "Tank.h"          // Includes the base Tank class
 
-YOUR SECOND CHALLENGE: LEARN HOW TO FIRE AT TARGETS
-
-Now that you can move, time to learn COMBAT!
-
-In Round 2 Level 2, you'll face 3 moving targets that you must
-destroy using your tank's firing system.
-
-═══ THE OBJECTIVE ═══
-Position your tank and FIRE projectiles to destroy all targets:
-  • TARGET 1 - Position Y: 25
-  • TARGET 2 - Position Y: 50
-  • TARGET 3 - Position Y: 75
-
-═══ WHAT YOU'LL LEARN ═══
-→ fire() - Launch a projectile
-→ Calculating distance to target
-→ Timing your shots
-→ Aiming and alignment tactics
-
-═══ KEY FUNCTIONS ═══
-float distance = abs(target.y - this->y);
-if (distance < 18) {
-    fire();  // Projectile launched!
-}
-
-STRATEGY: Stay centered, pick targets, fire when aligned.
-
-RESULT: You'll become a skilled tank gunner!
-════════════════════════════════════════════════════════════════
-    `,
-    isSnippet: false,
-  },
-  3: {
-    title: '🛡️ ROUND 2: LEVEL 3 - DEFENSE & MAKAROV',
-    description: `
-══════════════════════════════════════════════════════════════
-
-YOUR FINAL CHALLENGE: LEARN DEFENSE & DEFEAT MAKAROV
-
-This is it. You face the legendary MAKAROV - the supreme tank AI.
-
-In Round 2 Level 3, the enemy tank will:
-  ✓ Move erratically around the battlefield
-  ✓ FIRE projectiles at YOUR tank
-  ✓ Activate shields when under threat
-
-═══ WHAT YOU'LL LEARN ═══
-→ activateShield() - Block incoming fire
-→ Shield Mechanics: 2 activations × 5 seconds each
-→ When to move, when to fire, when to defend
-→ Full tank combat strategy
-
-═══ ENEMY CAPABILITIES ═══
-Movement:  Unpredictable (sin wave patterns)
-Firing:    When aligned with you
-Defense:   Activates shield when critical
-
-═══ YOUR EQUIPMENT ═══
-Health:    100 HP (stay above 0 to survive)
-Shields:   2 uses × 5 seconds each (resets after use)
-Ammo:      Unlimited (fire() has cooldown)
-
-═══ SHIELD ACTIVATION ═══
-if (enemy.isFiring()) {
-    activateShield();  // 5 second protection
-}
-
-═══ WINNING STRATEGY ═══
-1. TRACK - Follow enemy movement
-2. FIRE - Attack when aligned
-3. DEFEND - Shield when enemy fires
-4. REPEAT - Until enemy HP reaches 0
-
-OBJECTIVE: Defeat MAKAROV to win ROUND 2!
-
-════════════════════════════════════════════════════════════════
-After this level, you'll receive advanced code patterns
-from levels 4-10 that you MUST save in a notepad file!
-════════════════════════════════════════════════════════════════
-    `,
-    isSnippet: false,
-  },
-  4: {
-    title: '💾 LEVEL 4: CHECKPOINT NAVIGATION',
-    description: `Use this code for Round 2 Level 1! Navigate through checkpoints at Y: 20, 50, 80`,
-    snippet: `
-#include <iostream>
-#include "Tank.h"
-
-class MyTank : public Tank {
+class MyTank : public Tank {   // MyTank inherits from Tank
 private:
-    int checkpointIndex = 0;  // Tracks which checkpoint we're aiming for (0, 1, or 2)
-    const int checkpoints[3] = {20, 50, 80};  // 3 checkpoint positions on the Y-axis
+    int checkpointIndex = 0;   // Keeps track of current checkpoint
+    const int checkpoints[3] = {20, 50, 80};  // Y positions of 3 checkpoints
 
 public:
-    void move() override {
-        int targetY = checkpoints[checkpointIndex];  // Get the Y position of current checkpoint
-        
-        // Check if tank is ABOVE the target (more than 2 units higher)
+    void move() override {     // Override move() function
+        int targetY = checkpoints[checkpointIndex];  // Current target
+
+        // Move down if tank is above target
         if (this->y < targetY - 2) {
-            moveDown();  // Move DOWN towards the checkpoint
-        } 
-        // Check if tank is BELOW the target (more than 2 units lower)
-        else if (this->y > targetY + 2) {
-            moveUp();  // Move UP towards the checkpoint
+            moveDown();        // Increase Y
         }
-        
-        // Check if tank REACHED the checkpoint (within 2 units tolerance)
+        // Move up if tank is below target
+        else if (this->y > targetY + 2) {
+            moveUp();          // Decrease Y
+        }
+
+        // If tank reaches checkpoint (within ±2), go to next
         if (abs(this->y - targetY) <= 2) {
-            checkpointIndex++;  // Advance to next checkpoint
-            // Reset to first checkpoint after visiting all 3
+            checkpointIndex++; // Move to next checkpoint
+
+            // Reset after last checkpoint
             if (checkpointIndex >= 3) checkpointIndex = 0;
         }
     }
 
-    void attack() override { }  // Not used in Level 1 (movement only)
-    void defend() override { }  // Not used in Level 1 (movement only)
-};
-    `,
+    void attack() override {   // Override attack()
+        // No firing in Level 1
+    }
+
+    void defend() override {   // Override defend()
+        // No defense in Level 1
+    }
+};`,
+    isSnippet: true,
+  },
+  3: {
+    title: '� ROUND 2 LEVEL 2 — FIRE AT TARGETS CODE',
+    description: `This code snippet will help you in Level 2 of Round 2, where you have to fire at fixed targets on the screen.`,
+    snippet: `#include <iostream>        // Include standard I/O library
+#include "Tank.h"          // Include base Tank class
+
+class MyTank : public Tank {   // MyTank inherits from Tank
+public:
+    void move() override {     // Override the move() function
+        // Align your tank vertically with the target (enemy)
+        if (this->y < enemy.y - 2) {
+            moveDown();        // Move tank down if it's above the enemy
+        }
+        else if (this->y > enemy.y + 2) {
+            moveUp();          // Move tank up if it's below the enemy
+        }
+        // Tank stops moving when within ±2 units of enemy.y
+    }
+
+    void attack() override {   // Override the attack() function
+        // Shoot only when aligned closely with the target
+        if (abs(this->y - enemy.y) < 10) {
+            fire();            // Fire projectile at the target
+        }
+    }
+
+    void defend() override {   // Override defend() function
+        // No defense needed in Level 2
+    }
+};`,
+    isSnippet: true,
+  },
+  4: {
+    title: '💾 ROUND 2 LEVEL 3 — SHIELD & DEFENSE CODE',
+    description: `This code will come in handy in Level 3 of Round 2, where a dummy enemy tank fires at you. It teaches you how to defend yourself by activating your shield at the right times.`,
+    snippet: `#include <iostream>    // Standard I/O library
+#include "Tank.h"      // Include the base Tank class
+
+class MyTank : public Tank {
+public:
+    void move() override {
+        // Level 3 tank does not move
+        // All focus is on defending against enemy shots
+    }
+
+    void attack() override {
+        // Level 3 has no attacks for the player
+        // Shield is the only way to survive enemy fire
+    }
+
+    void defend() override {
+        // This function handles your defensive actions
+        // The enemy fires twice: ~2 seconds and ~5 seconds
+        // You have exactly 2 shields; each shield blocks 1 projectile
+
+        if (enemy.isFiring()) {  // Check if enemy is shooting at this moment
+            activateShield();    // Activate shield to block the projectile
+        }
+    }
+};`,
     isSnippet: true,
   },
   5: {
-    title: '💾 LEVEL 5: FIRING AT MOVING TARGETS',
-    description: `Use this code for Round 2 Level 2! Track and fire at 3 moving targets.`,
-    snippet: `
-#include <iostream>
-#include "Tank.h"
+    title: '⚠️ INTEL INTERCEPT — MAKAROV THREAT ALERT',
+    description: `
+════════════════════════════════════════════════════════════
 
-class MyTank : public Tank {
-public:
-    void move() override {
-        // Stay centered for good firing position
-        if (this->y > 52) {
-            moveUp();
-        } else if (this->y < 48) {
-            moveDown();
-        }
-    }
+WARNING: MAKAROV IS MOBILISING
 
-    void attack() override {
-        // Fire at moving targets
-        float distance = abs(target.y - this->y);
-        
-        if (target.isActive && distance < 18) {
-            fire();  // Fire when target is close to your Y
-        }
-    }
+Wait. Our operatives have picked up movement.
+MAKAROV is getting ready.
 
-    void defend() override { }
-};
+Do not underestimate him.
+
+He is no ordinary adversary. MAKAROV is a trained
+computer scientist — he understands systems, code,
+and logic at a level most soldiers never reach.
+
+But that is only half of it.
+
+He also served as Commanding Officer of the
+13th Lancers — The Spearhead Regiment of the
+Pakistan Army — combining battlefield command
+with deep technical expertise.
+
+He knows how tanks think.
+He knows how YOU will code.
+
+════════════════════════════════════════════════════════════
+
+Prepare your logic. Sharpen your code.
+Round 2 is closer than you think.
+
+════════════════════════════════════════════════════════════
     `,
-    isSnippet: true,
+    isSnippet: false,
   },
   6: {
-    title: '💾 LEVEL 6: ENEMY TANK COMBAT',
-    description: `Use this code for Round 2 Level 3! Enemy tank moves, fires, and shields.`,
-    snippet: `
-#include <iostream>
-#include "Tank.h"
+    title: '🪖 CLASSIFIED INTEL — MAKAROV\'S WEAPON',
+    description: `
+════════════════════════════════════════════════════════════
 
-class MyTank : public Tank {
-private:
-    int shieldCount = 0;
+CLASSIFIED — EYES ONLY
 
-public:
-    void move() override {
-        // Track enemy tank movement
-        if (enemy.y > this->y + 3) {
-            moveDown();
-        } else if (enemy.y < this->y - 3) {
-            moveUp();
-        }
-    }
+We've identified MAKAROV's vehicle.
 
-    void attack() override {
-        // Fire when aligned with enemy
-        float distance = abs(enemy.y - this->y);
-        if (distance < 15) {
-            fire();
-        }
-    }
+He commands the HAIDER VT-4.
 
-    void defend() override {
-        // Shield when enemy fires
-        if (enemy.isFiring() && shieldCount < 2) {
-            activateShield();  // 3 sec duration
-            shieldCount++;
-        }
-    }
-};
+A third-generation plus Main Battle Tank of the
+Pakistan Army — an indigenous variant of the
+Chinese VT-4 MBT, built by Heavy Industries Taxila.
+
+════════════════════════════════════════════════════════════
+
+THREAT ASSESSMENT:
+
+  Armament   —  125mm smoothbore gun
+  Systems    —  Advanced fire-control + hunter-killer
+  Armour     —  Composite + explosive reactive armour
+  Mobility   —  High-speed, high-maneuverability
+
+One of the most modern and formidable tanks
+on the battlefield today.
+
+════════════════════════════════════════════════════════════
+
+You will face him in Round 2.
+Your code is your only weapon.
+
+Be very cautious.
+
+════════════════════════════════════════════════════════════
     `,
-    isSnippet: true,
+    isSnippet: false,
   },
   7: {
-    title: '💾 LEVEL 7: ADVANCED MOVEMENT',
-    description: `Reference - Lead enemy position for better hits`,
-    snippet: `
-// Predict enemy position for leading shots
-void move() override {
-    float predictedY = enemy.y + (enemy.velocity * 0.2);
-    
-    if (predictedY > this->y + 5) {
-        moveDown();
-    } else if (predictedY < this->y - 5) {
-        moveUp();
-    }
-}
+    title: '�️ MISSION BRIEFING — YOUR TANK AWAITS',
+    description: `
+════════════════════════════════════════════════════════════
+
+GEAR UP, FASTIAN.
+
+You are about to enter Round 2 — Level 4.
+
+You command the AL-ZARRAR.
+
+A highly agile and heavily armed Main Battle Tank
+of the Pakistan Army.
+
+════════════════════════════════════════════════════════════
+
+YOUR ARSENAL:
+
+  Gun        —  125mm smoothbore gun
+  Systems    —  Advanced fire-control systems
+  Armour     —  Composite + reactive armour
+  Mobility   —  High agility, deadly on the battlefield
+
+════════════════════════════════════════════════════════════
+
+Fastians know OOP really well.
+
+You have THREE methods to override:
+
+  → move()
+  → attack()
+  → defend()
+
+Craft your OOP logic carefully.
+
+Your enemy — MAKAROV — commands "The Haider VT-4."
+
+Defeat him.
+
+════════════════════════════════════════════════════════════
     `,
-    isSnippet: true,
+    isSnippet: false,
   },
   8: {
-    title: '💾 LEVEL 8: AGGRESSIVE FIRING',
-    description: `Reference - Rapid fire tactics at wider angles`,
-    snippet: `
-// Aggressive approach: Move + Fire frequently
-void move() override {
-    if (enemy.y > this->y) {
-        moveDown();
-    } else {
-        moveUp();
-    }
-}
+    title: '⚙️ PREPARING YOUR TANK...',
+    description: `
+════════════════════════════════════════════════════════════
 
-void attack() override {
-    if (abs(enemy.y - this->y) < 20) {
-        fire();  // Fire more often
-    }
-}
+PREPARING YOUR TANK
+
+════════════════════════════════════════════════════════════
     `,
-    isSnippet: true,
+    isSnippet: false,
   },
   9: {
-    title: '💾 LEVEL 9: SMART SHIELD USAGE',
-    description: `Reference - Predict when to defend`,
-    snippet: `
-int shieldCount = 0;
+    title: '� LOADING AMMUNITION...',
+    description: `
+════════════════════════════════════════════════════════════
 
-void defend() override {
-    // Defensive shield approach
-    if (enemy.isFiring() && shieldCount < 2) {
-        activateShield();
-        shieldCount++;
-    }
-    
-    // Could also predict enemy movement
-    if (this->hp < 30 && shieldCount < 2) {
-        activateShield();  // Defensive shield
-        shieldCount++;
-    }
-}
+LOADING AMMUNITION
+
+════════════════════════════════════════════════════════════
     `,
-    isSnippet: true,
+    isSnippet: false,
   },
   10: {
-    title: '💾 LEVEL 10: COMPLETE TANK AI',
-    description: `Reference - Full integration of all mechanics`,
-    snippet: `
-class MyTank : public Tank {
-    int shieldCount = 0;
-    
-    void move() override {
-        if (enemy.y > this->y + 3) moveDown();
-        else if (enemy.y < this->y - 3) moveUp();
-    }
-    
-    void attack() override {
-        if (abs(enemy.y - this->y) < 15) fire();
-    }
-    
-    void defend() override {
-        if (enemy.isFiring() && shieldCount < 2) {
-            activateShield();
-            shieldCount++;
-        }
-    }
-};
+    title: '⚔️ BATTLE STATIONS — MOVE OUT, MAJOR!',
+    description: `
+════════════════════════════════════════════════════════════
+
+Prepare yourself!
+
+The battle is about to begin — gear up, Major!
+
+Every second counts.
+Every move matters.
+
+The battlefield awaits your command.
+
+Get ready to strike!
+
+════════════════════════════════════════════════════════════
     `,
-    isSnippet: true,
-  },
-  10: {
-    title: '💾 LEVEL 10 SNIPPET: FINAL BOSS STRATEGY',
-    description: `Save this ultimate tank AI pattern!`,
-    snippet: `
-// Complete Tank AI for Makarov
-class MyTank : public Tank {
-    int shieldUses = 0;
-    
-    void move() override {
-        if (enemy.y > this->y) moveDown();
-        else moveUp();
-    }
-    
-    void attack() override {
-        if (abs(enemy.y - this->y) < 12) fire();
-    }
-    
-    void defend() override {
-        if (enemy.isFiring() && shieldUses < 2) {
-            activateShield();
-            shieldUses++;
-        }
-    }
-};
-    `,
-    isSnippet: true,
+    isSnippet: false,
   },
 };
 
@@ -578,6 +537,25 @@ const Round2InsightModal = ({
   onClose: () => void;
 }) => {
   const insight = ROUND2_INSIGHTS[level];
+  const [copied, setCopied] = useState(false);
+  const [typedTitle, setTypedTitle] = useState('');
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    const title = insight?.title || '';
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i <= title.length) {
+        setTypedTitle(title.slice(0, i));
+        i++;
+      } else {
+        clearInterval(timer);
+        setTimeout(() => setShowContent(true), 200);
+      }
+    }, 30);
+    return () => clearInterval(timer);
+  }, [insight?.title]);
+
   if (!insight) return null;
 
   return (
@@ -585,86 +563,224 @@ const Round2InsightModal = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
       onClick={onClose}
+      style={{ background: 'radial-gradient(ellipse at center, rgba(0,20,0,0.95) 0%, rgba(0,0,0,0.98) 100%)' }}
     >
+      {/* Animated scan line overlay */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+        <motion.div
+          className="absolute left-0 right-0 h-[2px]"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(57,255,20,0.3), transparent)' }}
+          animate={{ top: ['-2px', '100vh'] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+        />
+      </div>
+
       <motion.div
-        initial={{ scale: 0.8, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.8, y: 20 }}
-        className="bg-gradient-to-br from-slate-950 via-slate-900 to-black border-2 border-lime-400 rounded-lg p-6 max-w-3xl w-full shadow-2xl"
-        style={{ boxShadow: '0 0 40px rgba(57,255,20,0.3), inset 0 0 20px rgba(57,255,20,0.1)' }}
+        initial={{ scale: 0.7, y: 40, rotateX: 15 }}
+        animate={{ scale: 1, y: 0, rotateX: 0 }}
+        exit={{ scale: 0.7, y: 40, opacity: 0 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+        className="relative max-w-3xl w-full"
         onClick={(e) => e.stopPropagation()}
+        style={{ perspective: '1000px' }}
       >
-        {/* Decorative corners */}
-        <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-lime-400" />
-        <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-lime-400" />
-        <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-lime-400" />
-        <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-lime-400" />
+        {/* Outer glow frame */}
+        <div className="absolute -inset-[2px] rounded-lg opacity-60"
+          style={{
+            background: 'linear-gradient(135deg, #39ff14, #00e5ff, #39ff14, #ff5f57, #39ff14)',
+            backgroundSize: '400% 400%',
+            animation: 'borderScan 4s linear infinite',
+          }}
+        />
 
-        {/* Title */}
-        <h2 className="text-2xl font-bold text-lime-400 mb-4 font-mono tracking-widest drop-shadow-lg">
-          {insight.title}
-        </h2>
+        {/* Main card */}
+        <div className="relative bg-[#0a0f0a] rounded-lg overflow-hidden border border-lime-500/30">
+          {/* Top header bar — terminal style */}
+          <div className="flex items-center px-4 py-2 border-b border-lime-500/30"
+            style={{ background: 'linear-gradient(90deg, rgba(57,255,20,0.08), rgba(0,229,255,0.05), rgba(57,255,20,0.08))' }}>
+            <div className="flex gap-2 mr-4">
+              <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(255,95,87,0.6)]" />
+              <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(254,188,46,0.6)]" />
+              <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_6px_rgba(57,255,20,0.6)]" />
+            </div>
+            <span className="text-lime-500/60 text-xs font-mono flex-1 text-center tracking-widest">
+              root@classwars:~/intel/round2/{insight.isSnippet ? 'code' : 'briefing'} — CLASSIFIED
+            </span>
+            <motion.div
+              className="w-2 h-2 rounded-full bg-red-500"
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          </div>
 
-        {/* Content - scrollable area */}
-        <div className="mb-6 max-h-96 overflow-y-auto pr-3">
-          {insight.isSnippet ? (
-            <>
-              <p className="text-cyan-300 text-sm mb-3 font-mono whitespace-pre-line leading-relaxed drop-shadow-md">
-                {insight.description}
-              </p>
-              <pre className="bg-black bg-opacity-80 border-2 border-lime-400/50 rounded p-4 text-lime-300 text-xs overflow-x-auto font-mono leading-relaxed max-h-60 overflow-y-auto"
-                style={{
-                  boxShadow: '0 0 15px rgba(57,255,20,0.15), inset 0 0 10px rgba(0,0,0,0.5)'
-                }}>
-                <code>{insight.snippet?.trim()}</code>
-              </pre>
-            </>
-          ) : (
-            <p className="text-gray-100 whitespace-pre-line text-sm leading-relaxed font-mono drop-shadow-md">
-              {insight.description}
-            </p>
-          )}
-        </div>
+          {/* HUD corners */}
+          <div className="absolute top-11 left-2 w-5 h-5 border-t-2 border-l-2 border-cyan-400/60" />
+          <div className="absolute top-11 right-2 w-5 h-5 border-t-2 border-r-2 border-cyan-400/60" />
+          <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-cyan-400/60" />
+          <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-cyan-400/60" />
 
-        {/* Action Info */}
-        <div className="mb-4 p-3 bg-lime-400/5 border-2 border-lime-400/40 rounded text-lime-300 text-sm font-mono">
-          {insight.isSnippet ? (
-            <>
-              📋 <strong>SAVE THIS CODE!</strong> Copy to your notepad file.
-              <br />
-              You'll need these patterns from Levels 4-10 for Round 2!
-            </>
-          ) : (
-            <>
-              🎯 <strong>IMPORTANT:</strong> Study these mechanics carefully.
-              <br />
-              You'll use them in the corresponding Round 2 level!
-            </>
-          )}
-        </div>
-
-        {/* Close Button */}
-        <div className="flex justify-end gap-3">
-          {insight.isSnippet && (
-            <button
-              onClick={() => {
-                const snippetText = insight.snippet || '';
-                navigator.clipboard.writeText(snippetText);
-                alert('✓ Code snippet copied to clipboard! Paste into your notepad.');
-              }}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-black font-bold rounded transition border-2 border-cyan-400 drop-shadow-lg"
+          <div className="p-6">
+            {/* Classification stamp */}
+            <motion.div
+              initial={{ opacity: 0, scale: 1.5, rotate: -10 }}
+              animate={{ opacity: 0.12, scale: 1, rotate: -10 }}
+              className="absolute top-20 right-8 text-red-500 text-6xl font-black font-mono tracking-[0.3em] pointer-events-none select-none"
             >
-              📋 Copy Code
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-lime-500 hover:bg-lime-400 text-black font-bold rounded transition border-2 border-lime-300 drop-shadow-lg"
-          >
-            ✓ ACKNOWLEDGED
-          </button>
+              CLASSIFIED
+            </motion.div>
+
+            {/* Intel level badge */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="px-3 py-1 rounded text-xs font-mono font-bold tracking-widest border"
+                style={{
+                  background: insight.isSnippet
+                    ? 'rgba(0,229,255,0.1)'
+                    : 'rgba(255,95,87,0.1)',
+                  borderColor: insight.isSnippet
+                    ? 'rgba(0,229,255,0.4)'
+                    : 'rgba(255,95,87,0.4)',
+                  color: insight.isSnippet ? '#00e5ff' : '#ff5f57',
+                  boxShadow: insight.isSnippet
+                    ? '0 0 10px rgba(0,229,255,0.2)'
+                    : '0 0 10px rgba(255,95,87,0.2)',
+                }}>
+                {insight.isSnippet ? '◈ CODE INTEL' : '◈ FIELD BRIEFING'}
+              </div>
+              <div className="text-lime-500/40 text-xs font-mono">
+                LEVEL {level} / 10
+              </div>
+              <div className="flex-1" />
+              <div className="text-amber-400/60 text-xs font-mono flex items-center gap-1">
+                <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>●</motion.span>
+                LIVE FEED
+              </div>
+            </div>
+
+            {/* Title — typewriter effect */}
+            <h2 className="text-xl md:text-2xl font-bold font-mono tracking-wider mb-5 min-h-[2rem]"
+              style={{
+                color: insight.isSnippet ? '#00e5ff' : '#39ff14',
+                textShadow: insight.isSnippet
+                  ? '0 0 20px rgba(0,229,255,0.5), 0 0 40px rgba(0,229,255,0.2)'
+                  : '0 0 20px rgba(57,255,20,0.5), 0 0 40px rgba(57,255,20,0.2)',
+              }}>
+              {typedTitle}
+              <motion.span
+                animate={{ opacity: [1, 0] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+                className="text-lime-400 ml-1"
+              >▌</motion.span>
+            </h2>
+
+            {/* Divider with data stream look */}
+            <div className="flex items-center gap-2 mb-5">
+              <div className="flex-1 h-px bg-gradient-to-r from-lime-500/60 via-cyan-500/40 to-transparent" />
+              <span className="text-lime-500/30 text-[10px] font-mono">◆ ◆ ◆</span>
+              <div className="flex-1 h-px bg-gradient-to-l from-lime-500/60 via-cyan-500/40 to-transparent" />
+            </div>
+
+            {/* Content */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={showContent ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5 }}
+              className="mb-6 max-h-[50vh] overflow-y-auto pr-3"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#39ff14 transparent',
+              }}
+            >
+              {insight.isSnippet ? (
+                <>
+                  <p className="text-cyan-300/90 text-sm mb-4 font-mono whitespace-pre-line leading-relaxed px-1"
+                    style={{ textShadow: '0 0 8px rgba(0,229,255,0.2)' }}>
+                    {insight.description}
+                  </p>
+                  <div className="relative group">
+                    {/* Code block header */}
+                    <div className="flex items-center justify-between px-4 py-2 rounded-t border border-b-0 border-lime-500/30"
+                      style={{ background: 'rgba(57,255,20,0.05)' }}>
+                      <span className="text-lime-500/60 text-xs font-mono">MyTank.cpp</span>
+                      <span className="text-lime-500/40 text-xs font-mono">C++</span>
+                    </div>
+                    <pre className="bg-black/90 border border-lime-500/30 rounded-b p-4 text-lime-300 text-xs overflow-x-auto font-mono leading-relaxed max-h-60 overflow-y-auto"
+                      style={{
+                        boxShadow: '0 0 20px rgba(57,255,20,0.1), inset 0 0 30px rgba(0,0,0,0.8)',
+                        textShadow: '0 0 4px rgba(57,255,20,0.3)',
+                      }}>
+                      <code>{insight.snippet?.trim()}</code>
+                    </pre>
+                  </div>
+                </>
+              ) : (
+                <div className="px-2 py-1 font-mono text-sm leading-relaxed"
+                  style={{
+                    color: '#c8ffc8',
+                    textShadow: '0 0 6px rgba(57,255,20,0.15)',
+                  }}>
+                  <pre className="whitespace-pre-wrap">{insight.description.trim()}</pre>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Bottom info bar */}
+            <div className="flex items-center gap-3 mb-5 px-2 py-2 rounded border border-lime-500/20"
+              style={{ background: 'rgba(57,255,20,0.03)' }}>
+              {insight.isSnippet ? (
+                <span className="text-cyan-400/80 text-xs font-mono">
+                  <span className="text-amber-400">⚡</span> SAVE THIS CODE — You will need it for Round 2
+                </span>
+              ) : (
+                <span className="text-lime-400/80 text-xs font-mono">
+                  <span className="text-red-400">⚠</span> CLASSIFIED INTEL — Read carefully before proceeding
+                </span>
+              )}
+              <div className="flex-1" />
+              <span className="text-lime-500/30 text-xs font-mono">{level}/10 UNLOCKED</span>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-3">
+              {insight.isSnippet && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(insight.snippet || '');
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="px-5 py-2.5 font-bold font-mono text-sm rounded transition-all tracking-wider"
+                  style={{
+                    background: copied
+                      ? 'rgba(57,255,20,0.2)'
+                      : 'rgba(0,229,255,0.1)',
+                    border: `1px solid ${copied ? '#39ff14' : 'rgba(0,229,255,0.4)'}`,
+                    color: copied ? '#39ff14' : '#00e5ff',
+                    boxShadow: copied
+                      ? '0 0 15px rgba(57,255,20,0.3)'
+                      : '0 0 10px rgba(0,229,255,0.15)',
+                  }}
+                >
+                  {copied ? '✓ COPIED' : '◈ COPY CODE'}
+                </motion.button>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.03, boxShadow: '0 0 25px rgba(57,255,20,0.4)' }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onClose}
+                className="px-6 py-2.5 font-bold font-mono text-sm rounded transition-all tracking-wider text-black"
+                style={{
+                  background: 'linear-gradient(135deg, #39ff14, #00e5ff)',
+                  boxShadow: '0 0 15px rgba(57,255,20,0.3)',
+                }}
+              >
+                ✓ ACKNOWLEDGED
+              </motion.button>
+            </div>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -1216,15 +1332,32 @@ export default function Round1() {
             <div className="text-[9px] text-[#39ff14]/30 text-center mb-2">
               <span className="text-[#39ff14]/50">$</span> cat /sys/architects
             </div>
-            <div className="flex items-center justify-center gap-2 mb-1.5">
-              <Terminal className="w-2.5 h-2.5 text-[#39ff14]/60" />
-              <span className="text-[#39ff14]/80 font-bold text-[11px] tracking-[0.15em] text-glow">TAHA ANWAR</span>
-              <span className="text-[7px] text-[#39ff14]/35 border border-[#39ff14]/15 px-1.5 py-px tracking-[0.2em]">ROOT</span>
+            {/* Tier 1 */}
+            <div className="flex items-center justify-center gap-4 flex-wrap mb-1">
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono" style={{color:'rgba(251,191,36,0.7)'}}>◈</span>
+                <span className="font-black text-[11px] tracking-[0.18em]" style={{color:'#fbbf24', textShadow:'0 0 10px rgba(251,191,36,0.8)'}}>ZOHAIR SHAMSI</span>
+                <span className="text-[6px] font-mono px-1 py-px tracking-[0.2em]" style={{color:'rgba(251,191,36,0.5)', border:'1px solid rgba(251,191,36,0.22)'}}>&lt;ARCH&gt;</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono" style={{color:'rgba(251,191,36,0.7)'}}>◈</span>
+                <span className="font-black text-[11px] tracking-[0.18em]" style={{color:'#fbbf24', textShadow:'0 0 10px rgba(251,191,36,0.8)'}}>UMER KHAN</span>
+                <span className="text-[6px] font-mono px-1 py-px tracking-[0.2em]" style={{color:'rgba(251,191,36,0.5)', border:'1px solid rgba(251,191,36,0.22)'}}>&lt;ARCH&gt;</span>
+              </div>
             </div>
+            <div className="text-[8px] text-white/10 tracking-widest text-center my-0.5">────────────────────</div>
+            {/* Tier 2 */}
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <span className="text-[13px] font-mono font-bold" style={{color:'rgba(0,229,255,0.75)'}}>{'>#'}</span>
+              <span className="font-bold text-[11px] tracking-[0.15em]" style={{color:'#00e5ff', textShadow:'0 0 8px rgba(0,229,255,0.8)'}}>TAHA ANWAR</span>
+              <span className="text-[7px] font-mono border border-[#00e5ff]/20 px-1.5 py-px tracking-[0.2em]" style={{color:'rgba(0,229,255,0.45)'}}>#ROOT</span>
+            </div>
+            <div className="text-[8px] text-white/10 tracking-widest text-center my-0.5">────────────────────</div>
+            {/* Tier 3 */}
             <div className="flex items-center justify-center gap-4 text-[10px]">
-              <span className="text-[#39ff14]/50 tracking-[0.1em]">MASHAL ZAHRA <span className="text-[#39ff14]/25 text-[7px] border border-[#39ff14]/10 px-1 py-px">SUDO</span></span>
+              <span className="flex items-center gap-1 text-[#39ff14]/80 tracking-[0.1em]"><span className="font-mono text-[#39ff14]/50">▸</span> RUMESA IQBAL <span className="text-[#39ff14]/40 text-[7px] font-mono border border-[#39ff14]/15 px-1 py-px">::DEV</span></span>
               <span className="text-[#39ff14]/15">│</span>
-              <span className="text-[#39ff14]/50 tracking-[0.1em]">RUMESA IQBAL <span className="text-[#39ff14]/25 text-[7px] border border-[#39ff14]/10 px-1 py-px">SUDO</span></span>
+              <span className="flex items-center gap-1 text-[#39ff14]/80 tracking-[0.1em]"><span className="font-mono text-[#39ff14]/50">▸</span> MASHAL ZAHRA <span className="text-[#39ff14]/40 text-[7px] font-mono border border-[#39ff14]/15 px-1 py-px">::DEV</span></span>
             </div>
           </div>
         </motion.div>
