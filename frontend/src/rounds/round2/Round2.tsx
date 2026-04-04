@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, RotateCcw, Shield, Target, Zap, AlertTriangle, Code2, Cpu, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalBackground from '../../components/TacticalBackground';
+import TankCodeEditor from '../../components/TankCodeEditor';
 import api from '../../api/axios';
 
 interface Checkpoint {
@@ -1068,50 +1069,69 @@ export default function Round2() {
             transition={{ delay: 0.1 }}
             className="lg:col-span-1"
           >
-            <div className="relative border border-[#39ff14]/25 bg-[#0a0a0a]/90 backdrop-blur p-4 box-glow shimmer h-[600px] flex flex-col">
+            <div className="relative border border-[#39ff14]/25 bg-[#0a0a0a]/90 backdrop-blur box-glow shimmer h-[600px] flex flex-col overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#39ff14] to-transparent" />
               <HudCorners size="sm" />
 
-              <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#39ff14]/20">
+              {/* IDE top bar */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-[#39ff14]/15 bg-[#0a0e14]">
                 <div className="flex items-center gap-2">
-                  <Code2 className="w-5 h-5 text-cyber-red" />
-                  <h2 className="text-sm font-bold tracking-[0.2em] text-cyber-red">CODE DEPLOYMENT</h2>
+                  <Code2 className="w-4 h-4 text-cyber-red" />
+                  <h2 className="text-xs font-bold tracking-[0.2em] text-cyber-red">CODE DEPLOYMENT</h2>
+                  <span className="text-[10px] text-[#39ff14]/30 ml-1">LVL {gameState.level}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[#39ff14]/50">LVL {gameState.level}</span>
-                  <button
-                    onClick={() => setCode(getLevelCode(gameState.level))}
-                    className="text-xs px-2 py-1 border border-[#39ff14]/40 text-[#39ff14] hover:bg-[#39ff14]/10 flex items-center gap-1 transition-all"
-                    title="Reset to starter code"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    RESET
-                  </button>
+                <button
+                  onClick={() => setCode(getLevelCode(gameState.level))}
+                  className="text-[10px] px-2 py-0.5 border border-[#39ff14]/30 text-[#39ff14]/70 hover:bg-[#39ff14]/10 flex items-center gap-1 transition-all"
+                  title="Reset to starter code"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  RESET
+                </button>
+              </div>
+
+              {/* File tab bar */}
+              <div className="flex items-center gap-0 mb-0 border-b border-[#39ff14]/15">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0d1117] border-r border-[#39ff14]/15 text-[10px] font-mono">
+                  <div className="w-2 h-2 rounded-full bg-[#ff003c]" />
+                  <span className="text-[#39ff14]/70">MyTank.cpp</span>
+                </div>
+                <div className="flex items-center gap-2 ml-auto px-3 py-1 text-[9px] font-mono text-[#39ff14]/30">
+                  <span>C++17</span>
+                  <span>•</span>
+                  <span>UTF-8</span>
+                  <span>•</span>
+                  <span className="text-cyan-400/50">TAB=indent  Ctrl+Space=hints</span>
                 </div>
               </div>
 
               {/* Level Objective Banner */}
-              <div className="mb-2 px-2 py-1.5 bg-black/50 border border-[#39ff14]/15 text-[10px] text-[#39ff14]/70">
-                {gameState.level === 1 && '> OBJECTIVE: Navigate to checkpoints at Y: 20, 50, 80. Use moveUp() and moveDown().'}
-                {gameState.level === 2 && '> OBJECTIVE: Track and destroy 3 moving targets. Use enemy.y and fire().'}
-                {gameState.level === 3 && '> OBJECTIVE: Defeat MAKAROV. Use move(), fire(), and activateShield().'}
+              <div className="px-3 py-1.5 bg-[#0d1117] border-b border-[#39ff14]/10 text-[10px] font-mono flex items-center gap-2">
+                <span className="text-[#ff003c]">//</span>
+                <span className="text-[#39ff14]/60">
+                  {gameState.level === 1 && 'OBJECTIVE: Navigate to checkpoints at Y:20, 50, 80 — use moveUp() / moveDown()'}
+                  {gameState.level === 2 && 'OBJECTIVE: Track & destroy 3 targets — use enemy.y, fire() when aligned'}
+                  {gameState.level === 3 && 'OBJECTIVE: Defeat MAKAROV — use fire(), activateShield() twice to block shots'}
+                </span>
               </div>
 
-              <textarea
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="flex-1 bg-black/80 border border-[#39ff14]/20 text-[#00ff00] font-mono text-xs leading-relaxed p-3 resize-none focus:border-[#ff003c] focus:outline-none overflow-auto"
-                spellCheck={false}
-                placeholder="Write your C++ tank code here..."
-              />
+              {/* CodeMirror Editor */}
+              <div className="flex-1 overflow-hidden border border-[#39ff14]/10" style={{ minHeight: 0 }}>
+                <TankCodeEditor
+                  value={code}
+                  onChange={setCode}
+                  height="100%"
+                />
+              </div>
 
+              {/* Compile button */}
               <button
                 onClick={submitCode}
                 disabled={compiling || gameState.running}
-                className="mt-3 w-full px-4 py-3 bg-[#ff003c] text-black font-black tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm"
+                className="w-full px-4 py-3 bg-[#ff003c] text-black font-black tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm border-t border-[#ff003c]/30"
               >
                 <Play className="w-4 h-4 group-hover:animate-pulse" />
-                COMPILE & RUN
+                {compiling ? compileStatus : 'COMPILE & RUN'}
               </button>
             </div>
           </motion.div>
