@@ -57,7 +57,8 @@ PROFILE:<track|up|down|idle>:<align|always|none>:<smart|none>
 |-------|----------|-----------|-------------|
 | 1 | Movement | Visit checkpoints Y: 20→50→80 | 5 position scenarios (S80, S20, S50, S50B, S30) |
 | 2 | Movement + Firing | Destroy 3 moving targets | 4 scenarios (ABOVE, BELOW, ALIGNED, FAR) |
-| 3 | Full Combat | Defeat enemy tank (Makarov) | 6 scenarios (ABOVE, BELOW, ALIGNED, FIRING, QUIET, LOWHP) |
+| 3 | Shield Defense | Block 2 enemy projectiles | 3 scenarios (FIRING, QUIET, LOWHP) |
+| 4 | Full Combat (Boss) | Defeat MAKAROV (100HP, 3 shields, continuous fire) | 5 scenarios (ABOVE, BELOW, ALIGNED, FIRING, LOWHP) |
 
 ### C++ Test Harness Output Format
 
@@ -81,7 +82,7 @@ PROFILE:track:none:none
 - Base: 100 points
 - HP bonus: `floor(hpRemaining / 100 * 50)` — max 50
 - Time bonus: `max(0, 50 - floor(seconds / 10))` — max 50
-- **Max per level: 200 pts, max Round 2 total: 600 pts**
+- **Max per level: 200 pts, max Round 2 total: 800 pts**
 
 ### Player Shield Mechanics (Level 3)
 

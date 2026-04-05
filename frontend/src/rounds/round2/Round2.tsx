@@ -136,7 +136,7 @@ public:
         // No defense in Level 2
     }
 };`;
-  } else {
+  } else if (level === 3) {
     return `#include <iostream>
 #include "Tank.h"
 
@@ -158,6 +158,48 @@ public:
         // enemy.isFiring() tells you if enemy is shooting
         // You have exactly 2 shield uses - time them wisely!
         // Enemy fires at: ~2 seconds and ~5 seconds
+
+        if (enemy.isFiring()) {
+            activateShield();
+        }
+    }
+};`;
+  } else {
+    return `#include <iostream>
+#include "Tank.h"
+
+class MyTank : public Tank {
+public:
+    void move() override {
+        // WRITE YOUR CODE HERE
+        // Track the enemy tank's position to align your shots
+        // enemy.y gives you the enemy's current Y position
+        // Use moveUp() / moveDown() to navigate
+
+        if (this->y < enemy.y - 3) {
+            moveDown();
+        } else if (this->y > enemy.y + 3) {
+            moveUp();
+        }
+    }
+
+    void attack() override {
+        // WRITE YOUR CODE HERE
+        // Fire when aligned with the enemy
+        // abs(this->y - enemy.y) gives distance to enemy
+        // fire() shoots a projectile toward the enemy
+
+        if (abs(this->y - enemy.y) < 8) {
+            fire();
+        }
+    }
+
+    void defend() override {
+        // WRITE YOUR CODE HERE
+        // Activate shield when the enemy is firing at you
+        // enemy.isFiring() tells you if enemy is shooting
+        // You have exactly 2 shield uses - time them wisely!
+        // Enemy has 3 shields and will block your shots!
 
         if (enemy.isFiring()) {
             activateShield();
@@ -219,10 +261,12 @@ const BriefingScreen = ({ onStart }: { onStart: () => void }) => {
     { text: '  LEVEL 1 ›  MOVEMENT      [Learn moveUp() / moveDown()]', type: 'rule' },
     { text: '  LEVEL 2 ›  FIRING        [Learn fire() / targeting]', type: 'rule' },
     { text: '  LEVEL 3 ›  DEFENSE       [Learn activateShield() - Block 2 enemy shots!]', type: 'rule' },
+    { text: '  LEVEL 4 ›  BOSS FIGHT    [Face MAKAROV — combine ALL skills!]', type: 'rule' },
     { text: '', type: 'blank' },
     { text: '══ ROUND 2 STRUCTURE ══', type: 'header' },
     { text: '  Each level teaches one core mechanic.', type: 'rule' },
     { text: '  Level 3: Both tanks fixed. Block 2 enemy shots with shield.', type: 'rule' },
+    { text: '  Level 4: Full combat vs MAKAROV — track, fire, shield to survive!', type: 'rule' },
     { text: '  Write code that controls move(), attack(), defend().', type: 'rule' },
     { text: '', type: 'blank' },
     { text: '  "May your code be swift and your defenses strong."', type: 'quote' },
@@ -343,7 +387,7 @@ export default function Round2() {
 
   const [gameState, setGameState] = useState<GameState>({
     level: 1,
-    maxLevel: 3,
+    maxLevel: 4,
     running: false,
     deployed: false,
     player: { x: 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
@@ -413,6 +457,19 @@ export default function Round2() {
         newState.player.y = 50;
         enemyShotsFiredRef.current = 0;
         log("LEVEL 3: Block both enemy projectiles with your shield");
+      } else if (prev.level === 4) {
+        // Level 4: Full combat vs MAKAROV
+        newState.player.x = 15;
+        newState.player.y = 50;
+        newState.enemy.y = 50;
+        newState.enemy.hp = 100;
+        newState.enemy.dir = 1;
+        newState.enemy.cooldown = 2.0;
+        newState.enemy.shieldActive = false;
+        newState.enemy.shieldCount = 0;
+        newState.enemy.shieldTimer = 0;
+        enemyShotsFiredRef.current = 0;
+        log("LEVEL 4: DEFEAT MAKAROV — Full combat! Track, fire, and shield!");
       }
 
       return newState;
@@ -484,6 +541,21 @@ export default function Round2() {
         enemyShotsFiredRef.current = 2;
         newState.projectiles.push({ x: 85, y: 50, isPlayer: false });
         log("ENEMY FIRES PROJECTILE 2!");
+      }
+    } else if (gameStateSnapshot.level === 4) {
+      // Level 4: MAKAROV AI — moves, fires, shields
+      // Enemy movement: bounce between Y:15 and Y:85 at 45u/s
+      newState.enemy.y += newState.enemy.dir * 45 * dt;
+      if (newState.enemy.y >= 85) { newState.enemy.dir = -1; newState.enemy.y = 85; }
+      if (newState.enemy.y <= 15) { newState.enemy.dir = 1; newState.enemy.y = 15; }
+
+      // Enemy fires aimed shots at player every 2s
+      newState.enemy.cooldown -= dt;
+      if (newState.enemy.cooldown <= 0 && newState.enemy.hp > 0) {
+        newState.projectiles.push({ x: 82, y: newState.player.y, isPlayer: false });
+        newState.enemy.cooldown = 2.0;
+        enemyShotsFiredRef.current += 1;
+        log(`MAKAROV FIRES! (shot #${enemyShotsFiredRef.current})`);
       }
     }
 
@@ -575,6 +647,11 @@ export default function Round2() {
             if (closestTarget && Math.abs(closestTarget.y - newState.player.y) < 8) {
               shouldFire = true;
             }
+          } else if (newState.level === 4) {
+            // Fire when aligned with enemy
+            if (Math.abs(newState.enemy.y - newState.player.y) < 8) {
+              shouldFire = true;
+            }
           }
         }
       }
@@ -589,7 +666,7 @@ export default function Round2() {
       }
 
       // ===== PLAYER SHIELD (Level 3) =====
-      if (prev.playerStrategy.shieldMode === 'smart' && newState.level === 3) {
+      if (prev.playerStrategy.shieldMode === 'smart' && (newState.level === 3 || newState.level === 4)) {
         // 1) Countdown FIRST so expired shields clear before auto-activate
         if (newState.player.shieldActive && newState.player.shieldTimer > 0) {
           newState.player.shieldTimer = newState.player.shieldTimer - dt;
@@ -608,6 +685,30 @@ export default function Round2() {
             newState.player.shieldCount += 1;
             newState.player.shieldTimer = 3.0;
             log(`SHIELD ACTIVATED (${newState.player.shieldCount}/2)`);
+          }
+        }
+      }
+
+      // ===== ENEMY SHIELD AI (Level 4) =====
+      if (newState.level === 4) {
+        // Countdown enemy shield
+        if (newState.enemy.shieldActive && newState.enemy.shieldTimer > 0) {
+          newState.enemy.shieldTimer -= dt;
+          if (newState.enemy.shieldTimer <= 0) {
+            newState.enemy.shieldActive = false;
+            newState.enemy.shieldTimer = 0;
+          }
+        }
+        // Enemy auto-activates shield when player projectile is incoming
+        if (!newState.enemy.shieldActive && newState.enemy.shieldCount < 3) {
+          const incomingPlayerProj = newState.projectiles.find(p =>
+            p.isPlayer && p.x >= 45 && p.x <= 78 && Math.abs(p.y - newState.enemy.y) < 20
+          );
+          if (incomingPlayerProj) {
+            newState.enemy.shieldActive = true;
+            newState.enemy.shieldCount += 1;
+            newState.enemy.shieldTimer = 2.0;
+            log(`MAKAROV SHIELD (${newState.enemy.shieldCount}/3)`);
           }
         }
       }
@@ -644,10 +745,28 @@ export default function Round2() {
                 }
                 return false;
               }
+            } else if (prev.level === 4) {
+              // Level 4: Player projectile hitting enemy
+              const hitEnemy = p.x >= 78 && p.x <= 92 && Math.abs(p.y - newState.enemy.y) < 15;
+              if (hitEnemy) {
+                if (newState.enemy.shieldActive) {
+                  const expId = Date.now() + Math.random();
+                  setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                  setTimeout(() => setExplosions(prev => prev.filter(e => e.id !== expId)), 500);
+                  log("MAKAROV'S SHIELD BLOCKED YOUR SHOT!");
+                  return false;
+                }
+                const expId = Date.now() + Math.random();
+                setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                setTimeout(() => setExplosions(prev => prev.filter(e => e.id !== expId)), 500);
+                newState.enemy.hp -= 25;
+                log(`HIT! MAKAROV HP: ${Math.max(0, Math.floor(newState.enemy.hp))}`);
+                return false;
+              }
             }
             // Level 3: No player projectiles, skip
           } else {
-            // Enemy projectile (Level 3 only)
+            // Enemy projectile
             if (prev.level === 3) {
               const hitPlayer = p.x <= 20 && p.x >= 0 && Math.abs(p.y - newState.player.y) < 15;
               if (hitPlayer) {
@@ -667,6 +786,24 @@ export default function Round2() {
                 }, 500);
                 newState.player.hp -= 50;
                 log("DIRECT HIT! Your tank took damage!");
+                return false;
+              }
+            } else if (prev.level === 4) {
+              // Level 4: Enemy projectile hitting player
+              const hitPlayer = p.x <= 20 && p.x >= 0 && Math.abs(p.y - newState.player.y) < 15;
+              if (hitPlayer) {
+                if (newState.player.shieldActive) {
+                  const expId = Date.now() + Math.random();
+                  setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                  setTimeout(() => setExplosions(prev => prev.filter(e => e.id !== expId)), 500);
+                  log("SHIELD BLOCKED ENEMY FIRE!");
+                  return false;
+                }
+                const expId = Date.now() + Math.random();
+                setExplosions(prev => [...prev, { x: p.x, y: p.y, id: expId }]);
+                setTimeout(() => setExplosions(prev => prev.filter(e => e.id !== expId)), 500);
+                newState.player.hp -= 25;
+                log(`ENEMY HIT! Your HP: ${Math.max(0, Math.floor(newState.player.hp))}`);
                 return false;
               }
             }
@@ -691,6 +828,12 @@ export default function Round2() {
         newState.running = false;
         setGameOver(true);
         log("MISSION FAILED: DID NOT BLOCK ALL PROJECTILES");
+      } else if (newState.level === 4 && newState.enemy.hp <= 0) {
+        // Level 4: Win when enemy destroyed
+        newState.running = false;
+        newState.enemy.hp = 0;
+        setLevelComplete(true);
+        log("MAKAROV DESTROYED! LEVEL 4 COMPLETE!");
       }
 
       return newState;
@@ -785,12 +928,13 @@ export default function Round2() {
             // Atomic reset+strategy in ONE state update to avoid race conditions
             setGameState(prev => {
               const isLevel3 = prev.level === 3;
+              const isLevel4 = prev.level === 4;
               const newState = {
                 ...prev,
                 running: false,
                 deployed: false,
-                player: { x: isLevel3 ? 15 : 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
-                enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+                player: { x: (isLevel3 || isLevel4) ? 15 : 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+                enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: isLevel4 ? 2.0 : 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
                 projectiles: [],
                 playerStrategy: { moveMode: isLevel3 ? 'idle' : moveMode, fireMode: isLevel3 ? 'none' : fireMode, shieldMode },
                 checkpoints: [
@@ -900,12 +1044,13 @@ export default function Round2() {
     setGameState(prev => {
       const strategy = prev.playerStrategy;
       const isLevel3 = prev.level === 3;
+      const isLevel4 = prev.level === 4;
       const newState = {
         ...prev,
         running: false,
         deployed: false,
-        player: { x: isLevel3 ? 15 : 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
-        enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+        player: { x: (isLevel3 || isLevel4) ? 15 : 8, y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, cooldown: 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
+        enemy: { y: 50, hp: 100, shield: 0, maxHp: 100, maxShield: 100, dir: 1, cooldown: isLevel4 ? 2.0 : 0, shieldActive: false, shieldCount: 0, shieldTimer: 0 },
         projectiles: [],
         playerStrategy: strategy,
         checkpoints: [
@@ -1063,6 +1208,8 @@ export default function Round2() {
                 {gameState.level === 1 && '> OBJECTIVE: Navigate to checkpoints at Y: 20, 50, 80. Use moveUp() and moveDown().'}
                 {gameState.level === 2 && '> OBJECTIVE: Track and destroy 3 stationary targets. Use enemy.y and fire().'}
                 {gameState.level === 3 && '> OBJECTIVE: Block 2 enemy projectiles using activateShield(). Enemy fires at ~2s and ~5s.'}
+                {gameState.level === 4 && '> OBJECTIVE: DEFEAT MAKAROV! Track enemy, fire when aligned, shield enemy shots. Enemy has 3 shields!'}
+                {gameState.level === 4 && '> OBJECTIVE: Defeat MAKAROV! Track movement, fire when aligned, shield enemy shots. Enemy has 100HP + 3 shields.'}
               </div>
 
               <div className="flex-1 overflow-hidden">
@@ -1107,6 +1254,13 @@ export default function Round2() {
                   {gameState.level === 3 && (
                     <span className="text-cyan-400">SHIELD: {gameState.player.shieldCount}/2</span>
                   )}
+                  {gameState.level === 4 && (
+                    <>
+                      <span className="text-red-400">ENEMY: {Math.floor(gameState.enemy.hp)}HP</span>
+                      <span className="text-cyan-400">SHIELD: {gameState.player.shieldCount}/2</span>
+                      <span className="text-yellow-400">ENEMY SHIELD: {gameState.enemy.shieldCount}/3</span>
+                    </>
+                  )}
                   <span className="text-[#39ff14]/60">HP: {Math.floor(gameState.player.hp)}%</span>
                 </div>
               </div>
@@ -1138,21 +1292,30 @@ export default function Round2() {
                   <span className="text-[9px] font-mono" style={{color: gameState.player.hp > 60 ? '#39ff14' : gameState.player.hp > 30 ? '#f59e0b' : '#ef4444'}}>{Math.floor(gameState.player.hp)}%</span>
                 </div>
 
-                {/* Enemy Status - compact bottom-right (Level 3) */}
-                {gameState.level === 3 && (
+                {/* Enemy Status - compact bottom-right (Level 3 & 4) */}
+                {(gameState.level === 3 || gameState.level === 4) && (
                   <div className="absolute bottom-2 right-2 z-20 flex items-center gap-2">
-                    <span className="text-[9px] text-red-400/70 font-mono">FOE</span>
+                    <span className="text-[9px] text-red-400/70 font-mono">MAKAROV</span>
                     <div className="w-24 h-1.5 bg-black/80 border border-red-400/20 flex items-center">
-                      <div className="h-full transition-all duration-300 bg-red-500" style={{ width: '100%' }} />
+                      <div className="h-full transition-all duration-300 bg-red-500" style={{ width: `${gameState.enemy.hp}%` }} />
                     </div>
-                    <span className="text-[9px] text-red-400 font-mono">READY</span>
+                    <span className="text-[9px] text-red-400 font-mono">
+                      {gameState.level === 3 ? 'READY' : `${Math.floor(gameState.enemy.hp)}%`}
+                    </span>
                   </div>
                 )}
 
-                {/* Shield indicator on player (Level 3) */}
+                {/* Shield indicator on player */}
                 {gameState.player.shieldActive && (
                   <div className="absolute bottom-5 left-2 z-20 text-[9px] text-cyan-400 font-mono animate-pulse">
                     SHIELD ACTIVE
+                  </div>
+                )}
+
+                {/* Enemy shield indicator (Level 4) */}
+                {gameState.level === 4 && gameState.enemy.shieldActive && (
+                  <div className="absolute bottom-5 right-2 z-20 text-[9px] text-orange-400 font-mono animate-pulse">
+                    MAKAROV SHIELD
                   </div>
                 )}
 
@@ -1222,9 +1385,12 @@ export default function Round2() {
                       >
                         <CheckCircle className="w-16 h-16 text-[#39ff14] mx-auto mb-4 animate-pulse" />
                         <h3 className="text-3xl font-black text-[#39ff14] text-glow mb-2">
-                          {gameState.level < gameState.maxLevel ? '✓ LEVEL COMPLETE' : '✓ ALL LEVELS CLEARED!'}
+                          {gameState.level === 4 ? 'MAKAROV DESTROYED!' : gameState.level < gameState.maxLevel ? 'LEVEL COMPLETE' : 'ALL LEVELS CLEARED!'}
                         </h3>
-                        <p className="text-sm text-[#39ff14]/70 mb-2">HP Remaining: {Math.floor(gameState.player.hp)}%</p>
+                        {gameState.level === 4 && (
+                          <p className="text-sm text-cyan-400 mb-1">Enemy Defeated — HP: 0%</p>
+                        )}
+                        <p className="text-sm text-[#39ff14]/70 mb-2">Your HP Remaining: {Math.floor(gameState.player.hp)}%</p>
                         <div className="text-xs text-[#39ff14]/60 mb-4 font-mono">
                           <div>BASE: 100 pts</div>
                           <div>HP BONUS: {Math.floor(gameState.player.hp / 100 * 50)} pts</div>
@@ -1320,8 +1486,8 @@ export default function Round2() {
                   )}
                 </div>
 
-                {/* Enemy Tank (Level 3 Only) */}
-                {gameState.level === 3 && (
+                {/* Enemy Tank (Level 3 & 4) */}
+                {(gameState.level === 3 || gameState.level === 4) && (
                   <div
                     className="absolute z-10"
                     style={{
@@ -1456,6 +1622,7 @@ export default function Round2() {
                 {gameState.level === 1 && 'REACH ALL CHECKPOINTS'}
                 {gameState.level === 2 && 'DESTROY ALL TARGETS'}
                 {gameState.level === 3 && 'BLOCK ALL PROJECTILES'}
+                {gameState.level === 4 && 'DEFEAT MAKAROV'}
               </div>
             </div>
           </div>
