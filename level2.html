@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Class Wars | Level 2</title>
+    <style>
+        :root { --neon: #00ff41; --bg: #050505; --red: #ff3131; --enemy: #ff0033; }
+        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; padding: 20px; overflow: hidden; }
+        header { text-align: center; margin-bottom: 10px; }
+        h1 { font-size: 2rem; text-shadow: 0 0 10px var(--neon); margin: 0; }
+        .main-container { display: flex; gap: 20px; justify-content: center; align-items: flex-start; }
+        .panel { background: #000; border: 1px solid var(--neon); display: flex; flex-direction: column; box-shadow: 0 0 15px #003b00; }
+        .panel-header { background: #003b00; color: #fff; padding: 5px 10px; font-size: 11px; font-weight: bold; border-bottom: 1px solid var(--neon); }
+        textarea { width: 560px; height: 460px; background: #000; color: var(--neon); border: none; padding: 15px; font-size: 13px; outline: none; overflow-y: scroll; box-sizing: border-box; }
+        #grid { width: 400px; height: 400px; display: grid; position: relative; grid-template-columns: repeat(10, 40px); grid-template-rows: repeat(10, 40px); border: 2px solid #333; }
+        .cell { border: 1px solid #1a1a1a; width: 40px; height: 40px; box-sizing: border-box; }
+        #tank { width: 40px; height: 40px; position: absolute; transition: 0.15s linear; z-index: 100; }
+        .tank-body { width: 28px; height: 24px; background: var(--neon); margin: 8px auto; border-radius: 3px; border: 1px solid #fff; position: relative; }
+        .tank-turret { width: 12px; height: 12px; background: #006400; position: absolute; top: 5px; left: 7px; }
+        .tank-barrel { width: 10px; height: 4px; background: var(--neon); position: absolute; top: 4px; right: -8px; }
+        .enemy { 
+            width: 30px; height: 30px; background: var(--enemy); position: absolute; 
+            transform: translate(5px, 5px); border-radius: 4px; border: 2px solid #fff;
+            box-shadow: 0 0 20px var(--enemy); z-index: 50; animation: glitch 3s infinite; cursor: crosshair;
+        }
+        .enemy:hover::after { content: attr(data-coords); position: absolute; top: -30px; background: white; color: black; padding: 2px 6px; border-radius: 4px; font-size: 12px; z-index: 200; box-shadow: 0 0 10px white; white-space: nowrap; }
+        @keyframes glitch { 0%, 95%, 100% { transform: translate(5px, 5px) skew(0deg); } 2% { transform: translate(8px, 2px) skew(15deg); } 97% { transform: translate(2px, 7px) skew(-20deg); } }
+        .enemy.destroyed { transform: scale(0); opacity: 0; transition: 0.5s; }
+        .projectile { width: 20px; height: 4px; background: #fff; position: absolute; z-index: 80; box-shadow: 0 0 15px var(--red), 0 0 5px white; transition: all 0.25s linear; }
+        #terminal-panel { width: 1000px; margin: 15px auto; border: 1px solid var(--neon); }
+        #terminal { height: 100px; background: #000; padding: 10px; font-size: 12px; overflow-y: scroll; color: var(--neon); box-sizing: border-box; }
+        button { background: var(--neon); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        button:hover { background: #fff; box-shadow: 0 0 20px var(--neon); }
+    </style>
+</head>
+<body>
+    <header><h1>CLASS WARS: LEVEL 2</h1></header>
+    <div class="main-container">
+        <div class="panel">
+            <div class="panel-header">C++ COMBAT_OS.CPP</div>
+            <textarea id="cpp-editor" spellcheck="false"></textarea>
+            <button id="run-btn" onclick="executeLevel2()">ENGAGE_PURGE</button>
+        </div>
+        <div class="panel">
+            <div class="panel-header">BATTLE_GRID</div>
+            <div id="grid"></div>
+        </div>
+    </div>
+    <div id="terminal-panel"><div class="panel-header">TERMINAL</div><div id="terminal">root@tank: scanning...</div></div>
+
+    <script>
+        const clientId = "9960fe994ec85a255ff9595cc7db7cd6";
+        const clientSecret = "1c5778b22b1fd5bc107968fe0e15e3a0852fe050067c492ec1f635df4978df17";
+        const CELL = 40;
+        let enemies = [];
+
+        function init() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = ''; 
+            for (let i = 0; i < 100; i++) { grid.appendChild(Object.assign(document.createElement('div'), {className: 'cell'})); }
+            enemies = [];
+            for (let x = 2; x <= 9; x++) {
+                let y = Math.floor(Math.random() * 10);
+                enemies.push({ x, y, hit: false });
+                const en = document.createElement('div');
+                en.className = 'enemy'; en.id = `en-${x}`; 
+                en.setAttribute('data-coords', `(${x}, ${y})`);
+                en.style.left = (x * CELL) + 'px'; en.style.top = (y * CELL) + 'px';
+                grid.appendChild(en);
+            }
+            const enemyDataArr = enemies.map(e => `{${e.x}, ${e.y}}`).join(', ');
+            document.getElementById('cpp-editor').value = `class MyTank : public Tank {\nprivate:\n    int x = 0, y = 0;\n    int targets[8][2] = {${enemyDataArr}};\n\npublic:\n    void move() override {\n        for(int i = 0; i < 8; i++) {\n            int tx = targets[i][0];\n            int ty = targets[i][1];\n\n            int lockX = tx - 2;\n            int lockY = ty;\n\n            while(x != lockX || y != lockY) {\n                if(x < lockX) x++;\n                else if(x > lockX) x--;\n                else if(y < ty) y++;\n                else if(y > ty) y--;\n                cout << "STEP:" << x << "," << y << endl;\n            }\n            fire(tx, ty); \n        }\n    }\n    void attack() override {}\n    void defend() override {}\n};\n\nint main() {\n    MyTank t;\n    t.move();\n    return 0;\n}`;
+        }
+        init();
+
+        async function executeLevel2() {
+            const code = document.getElementById('cpp-editor').value;
+            const term = document.getElementById('terminal');
+            const hiddenHeader = `#include <iostream>\nusing namespace std;\nclass Tank { public: virtual void move() = 0; virtual void attack() = 0; virtual void defend() = 0; };\nvoid fire(int tx, int ty) { cout << "FIRE:" << tx << "," << ty << endl; }\n`;
+            
+            if(document.getElementById('tank')) document.getElementById('tank').remove();
+            const tank = document.createElement('div');
+            tank.id = 'tank';
+            tank.innerHTML = '<div class="tank-body"><div class="tank-turret"><div class="tank-barrel"></div></div></div>';
+            document.getElementById('grid').appendChild(tank);
+            term.innerHTML = ">> BOOTING...";
+
+            try {
+                const res = await fetch('https://corsproxy.io/?https://api.jdoodle.com/v1/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, clientSecret, script: hiddenHeader + code, language: "cpp17", versionIndex: "0" })
+                });
+                const data = await res.json();
+                if (data.output) {
+                    const lines = data.output.split('\n');
+                    let i = 0, curX = 0, curY = 0;
+                    const interval = setInterval(() => {
+                        if (i >= lines.length) { clearInterval(interval); checkWin(); return; }
+                        const line = lines[i++];
+                        if (line.startsWith("STEP:")) {
+                            const [x, y] = line.split(":")[1].split(",").map(Number);
+                            curX = x; curY = y;
+                            tank.style.left = (x * CELL) + "px"; tank.style.top = (y * CELL) + "px";
+                        } else if (line.startsWith("FIRE:")) {
+                            const [tx, ty] = line.split(":")[1].split(",").map(Number);
+                            // THE NEW RULE: Distance <= 2 and same row
+                            if (Math.abs(curX - tx) <= 2 && curY === ty) {
+                                shoot(curX, curY, tx, ty);
+                            } else {
+                                term.innerHTML += `<br><span style="color:red">>> FIRE_ERROR: TARGET OUT OF RANGE.</span>`;
+                            }
+                        }
+                    }, 120);
+                }
+            } catch (e) { term.innerText = ">> ERROR."; }
+        }
+
+        function shoot(sx, sy, tx, ty) {
+            const p = document.createElement('div');
+            p.className = 'projectile';
+            p.style.left = (sx * CELL + 30) + "px"; p.style.top = (sy * CELL + 18) + "px";
+            document.getElementById('grid').appendChild(p);
+            setTimeout(() => { p.style.left = (tx * CELL + 10) + "px"; p.style.top = (ty * CELL + 18) + "px"; }, 50);
+            setTimeout(() => { 
+                p.remove(); 
+                const en = enemies.find(e => e.x === tx && e.y === ty);
+                if(en) { en.hit = true; document.getElementById(`en-${tx}`).classList.add('destroyed'); }
+            }, 300);
+        }
+
+        function checkWin() {
+            const term = document.getElementById('terminal');
+            if(enemies.every(e => e.hit)) term.innerHTML += `<br><br><span style="background:green; color:white; padding:5px;">>> SUCCESS: LEVEL 2 CLEARED.</span>`;
+        }
+    </script>
+</body>
+</html>

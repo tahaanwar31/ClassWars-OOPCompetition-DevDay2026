@@ -452,9 +452,20 @@ export default function Round2() {
                       : 'border-[#ff3131] bg-[#ff3131]/10 text-[#ff8080]'
                   }`}
                 >
-                  {resultStatus === 'success'
-                    ? 'ACCESS GRANTED // LEVEL 1 COMPLETE'
-                    : 'ACCESS REJECTED // RETRY REQUIRED'}
+                  <div>
+                    {resultStatus === 'success'
+                      ? 'ACCESS GRANTED // LEVEL 1 COMPLETE'
+                      : 'ACCESS REJECTED // RETRY REQUIRED'}
+                  </div>
+                  {resultStatus === 'success' && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/competition/round2/level2')}
+                      className="mt-3 w-full border border-[#39ff14] bg-[#39ff14] px-4 py-2 text-xs font-black tracking-[0.18em] text-black transition hover:bg-white"
+                    >
+                      PROCEED TO LEVEL 2
+                    </button>
+                  )}
                 </div>
               )}
             </div>

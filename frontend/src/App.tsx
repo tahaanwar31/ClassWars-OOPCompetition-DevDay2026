@@ -7,6 +7,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Round1 from './rounds/round1/Round1';
 import Round2 from './rounds/round2/Round2';
+import Level2 from './rounds/round2/Level2';
 import TeamLogin from './pages/TeamLogin';
 import CompetitionLobby from './pages/CompetitionLobby';
 import Login from './pages/admin/Login';
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/competition" element={<CompetitionLobby />} />
           <Route path="/competition/round1" element={<Round1 />} />
           <Route path="/competition/round2" element={<Round2 />} />
+          <Route path="/competition/round2/level2" element={<Level2 />} />
           
           {/* Legacy Game Route - redirect to competition lobby */}
           <Route path="/game" element={<Navigate to="/competition" replace />} />
