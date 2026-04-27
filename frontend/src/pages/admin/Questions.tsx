@@ -60,7 +60,7 @@ export default function Questions() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this question?')) return;
-    
+
     try {
       await api.delete(`/admin/questions/${id}`);
       fetchQuestions();
@@ -83,7 +83,7 @@ export default function Questions() {
       } else {
         await api.post('/admin/questions', questionData);
       }
-      
+
       setShowModal(false);
       setEditingQuestion(null);
       fetchQuestions();
@@ -96,167 +96,189 @@ export default function Questions() {
   const filteredQuestions = questions.filter((q) => {
     const matchesLevel = levelFilter === 'all' || q.level === parseInt(levelFilter);
     const matchesType = typeFilter === 'all' || q.type === typeFilter;
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       q.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (q.code && q.code.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     return matchesLevel && matchesType && matchesSearch;
   });
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center py-24 font-mono text-white/20 text-sm tracking-[0.1em]">
+        LOADING...
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-mono">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Questions Management</h1>
+        <h1 className="text-xl font-semibold text-white/80 tracking-[0.08em] uppercase">
+          Questions Management
+        </h1>
         <button
           onClick={() => { setEditingQuestion(null); setShowModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 bg-[#39ff14]/10 border border-[#39ff14]/30 text-[#39ff14] rounded text-sm tracking-[0.05em] hover:bg-[#39ff14]/20 transition-colors"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           Add Question
         </button>
       </div>
 
-      {/* Filters Section */}
-      <div className="bg-white rounded-lg shadow p-4">
+      {/* Filter Bar */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Level</label>
+            <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">
+              Filter by Level
+            </label>
             <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm focus:outline-none focus:border-[#39ff14]/30 transition-colors appearance-none"
             >
-              <option value="all">All Levels</option>
+              <option value="all" className="bg-[#111116]">All Levels</option>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
-                <option key={level} value={level}>Level {level}</option>
+                <option key={level} value={level} className="bg-[#111116]">Level {level}</option>
               ))}
             </select>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Type</label>
+            <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">
+              Filter by Type
+            </label>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm focus:outline-none focus:border-[#39ff14]/30 transition-colors appearance-none"
             >
-              <option value="all">All Types</option>
-              <option value="oneword">One Word</option>
-              <option value="mcq">Multiple Choice</option>
-              <option value="code">Code</option>
+              <option value="all" className="bg-[#111116]">All Types</option>
+              <option value="oneword" className="bg-[#111116]">One Word</option>
+              <option value="mcq" className="bg-[#111116]">Multiple Choice</option>
+              <option value="code" className="bg-[#111116]">Code</option>
             </select>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Questions</label>
+            <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">
+              Search Questions
+            </label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search in question text or code..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search in text or code..."
+              className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm placeholder:text-white/20 focus:outline-none focus:border-[#39ff14]/30 transition-colors"
             />
           </div>
         </div>
-        
-        <div className="mt-3 text-sm text-gray-600">
+
+        <div className="mt-4 text-[11px] tracking-[0.1em] text-white/25 uppercase">
           Showing {filteredQuestions.length} of {questions.length} questions
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Questions Table */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg overflow-hidden">
         <table className="min-w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left py-3 px-4">ID</th>
-              <th className="text-left py-3 px-4">Level</th>
-              <th className="text-left py-3 px-4">Type</th>
-              <th className="text-left py-3 px-4">Question</th>
-              <th className="text-left py-3 px-4">Actions</th>
+          <thead>
+            <tr className="border-b border-white/[0.06]">
+              <th className="text-left py-3 px-4 text-[10px] tracking-[0.15em] text-white/25 uppercase font-normal">ID</th>
+              <th className="text-left py-3 px-4 text-[10px] tracking-[0.15em] text-white/25 uppercase font-normal">Level</th>
+              <th className="text-left py-3 px-4 text-[10px] tracking-[0.15em] text-white/25 uppercase font-normal">Type</th>
+              <th className="text-left py-3 px-4 text-[10px] tracking-[0.15em] text-white/25 uppercase font-normal">Question</th>
+              <th className="text-left py-3 px-4 text-[10px] tracking-[0.15em] text-white/25 uppercase font-normal">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredQuestions.map((q) => (
-              <tr key={q._id} className="border-b hover:bg-gray-50">
-                <td className="py-3 px-4">{q.id}</td>
+              <tr key={q._id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                <td className="py-3 px-4 text-white/40 text-sm">{q.id}</td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                    Level {q.level}
+                  <span className="px-2 py-0.5 text-[10px] bg-[#39ff14]/10 text-[#39ff14]/70 rounded tracking-[0.05em]">
+                    LVL {q.level}
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm">
+                  <span className="px-2 py-0.5 text-[10px] bg-[#3b82f6]/10 text-[#3b82f6]/70 rounded tracking-[0.05em] uppercase">
                     {q.type}
                   </span>
                 </td>
-                <td className="py-3 px-4 max-w-md truncate">{q.text}</td>
+                <td className="py-3 px-4 max-w-md truncate text-white/60 text-sm">{q.text}</td>
                 <td className="py-3 px-4">
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <button
                       onClick={() => { setEditingQuestion(q); setShowModal(true); }}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                      className="p-1.5 text-white/30 hover:text-[#3b82f6] rounded transition-colors"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleDelete(q._id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded"
+                      className="p-1.5 text-red-400/60 hover:text-red-400 rounded transition-colors"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
+            {filteredQuestions.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-12 text-center text-white/20 text-sm tracking-[0.05em]">
+                  No questions found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
+      {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#111116] border border-white/[0.08] rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold text-white/80 tracking-[0.05em] uppercase mb-6">
               {editingQuestion ? 'Edit Question' : 'Add New Question'}
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Level</label>
+                  <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">Level</label>
                   <input
                     type="number"
                     min="1"
                     max="10"
                     value={formData.level}
                     onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm focus:outline-none focus:border-[#39ff14]/30 transition-colors"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Type</label>
+                  <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">Type</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm focus:outline-none focus:border-[#39ff14]/30 transition-colors appearance-none"
                     required
                   >
-                    <option value="oneword">One Word</option>
-                    <option value="mcq">Multiple Choice</option>
-                    <option value="code">Code</option>
+                    <option value="oneword" className="bg-[#111116]">One Word</option>
+                    <option value="mcq" className="bg-[#111116]">Multiple Choice</option>
+                    <option value="code" className="bg-[#111116]">Code</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Question Text</label>
+                <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">Question Text</label>
                 <textarea
                   value={formData.text}
                   onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm focus:outline-none focus:border-[#39ff14]/30 transition-colors resize-none"
                   rows={3}
                   required
                 />
@@ -264,11 +286,11 @@ export default function Questions() {
 
               {formData.type === 'code' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Code Snippet</label>
+                  <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">Code Snippet</label>
                   <textarea
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+                    className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm font-mono focus:outline-none focus:border-[#39ff14]/30 transition-colors resize-none"
                     rows={6}
                   />
                 </div>
@@ -276,46 +298,48 @@ export default function Questions() {
 
               {formData.type === 'mcq' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Options</label>
-                  {formData.options.map((option, index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      value={option}
-                      onChange={(e) => {
-                        const newOptions = [...formData.options];
-                        newOptions[index] = e.target.value;
-                        setFormData({ ...formData, options: newOptions });
-                      }}
-                      className="w-full px-3 py-2 border rounded-md mb-2"
-                      placeholder={`Option ${index + 1}`}
-                    />
-                  ))}
+                  <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">Options</label>
+                  <div className="space-y-2">
+                    {formData.options.map((option, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...formData.options];
+                          newOptions[index] = e.target.value;
+                          setFormData({ ...formData, options: newOptions });
+                        }}
+                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm placeholder:text-white/20 focus:outline-none focus:border-[#39ff14]/30 transition-colors"
+                        placeholder={`Option ${index + 1}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-2">Correct Answer</label>
+                <label className="block text-[11px] tracking-[0.1em] text-white/40 mb-2 uppercase">Correct Answer</label>
                 <input
                   type="text"
                   value={formData.correct}
                   onChange={(e) => setFormData({ ...formData, correct: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] text-white/80 rounded text-sm focus:outline-none focus:border-[#39ff14]/30 transition-colors"
                   required
                 />
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+                  className="flex-1 bg-[#39ff14]/10 border border-[#39ff14]/30 text-[#39ff14] py-2.5 rounded text-sm tracking-[0.05em] hover:bg-[#39ff14]/20 transition-colors"
                 >
                   {editingQuestion ? 'Update' : 'Add'} Question
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingQuestion(null); }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400"
+                  className="flex-1 bg-white/[0.04] border border-white/[0.08] text-white/40 py-2.5 rounded text-sm tracking-[0.05em] hover:bg-white/[0.08] hover:text-white/60 transition-colors"
                 >
                   Cancel
                 </button>

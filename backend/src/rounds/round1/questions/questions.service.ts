@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Question, QuestionDocument } from '../../../schemas/question.schema';
@@ -11,6 +11,12 @@ export class QuestionsService {
 
   async getQuestionsByLevel(level: number, roundKey: string = 'round1'): Promise<Question[]> {
     return this.questionModel.find({ level, roundKey, isActive: true }).exec();
+  }
+
+  async getQuestionById(id: number): Promise<Question> {
+    const question = await this.questionModel.findOne({ id, isActive: true }).exec();
+    if (!question) throw new NotFoundException('Question not found');
+    return question;
   }
 
   async getRandomQuestion(level: number, roundKey: string = 'round1'): Promise<Question> {

@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { GameSession, GameSessionDocument } from '../../../schemas/game-session.schema';
 import { GameConfig, GameConfigDocument, RoundConfig } from '../../../schemas/game-config.schema';
 import { Team, TeamDocument } from '../../../schemas/team.schema';
+import { Question, QuestionDocument } from '../../../schemas/question.schema';
 
 @Injectable()
 export class GameService {
@@ -11,6 +12,7 @@ export class GameService {
     @InjectModel(GameSession.name) private gameSessionModel: Model<GameSessionDocument>,
     @InjectModel(GameConfig.name) private gameConfigModel: Model<GameConfigDocument>,
     @InjectModel(Team.name) private teamModel: Model<TeamDocument>,
+    @InjectModel(Question.name) private questionModel: Model<QuestionDocument>,
   ) {}
 
   async createSession(teamName: string, roundKey: string = 'round1'): Promise<GameSession> {
@@ -89,12 +91,26 @@ export class GameService {
     isCorrect: boolean,
   ): Promise<GameSession> {
     const session = await this.getSession(sessionId);
-    
+
     // Don't allow answers on completed/finalized sessions
     if (session.status === 'completed' || session.isFinalized) {
       return session;
     }
-    
+
+    // Server-side answer verification — ignore frontend's isCorrect
+    const question = await this.questionModel.findOne({ id: questionId, roundKey: session.roundKey });
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+
+    let isVerified: boolean;
+    if (question.type === 'mcq') {
+      isVerified = answer === question.correct;
+    } else {
+      const normalize = (s: string) => s.replace(/\s+/g, '').replace(/;$/, '').toLowerCase();
+      isVerified = normalize(answer) === normalize(question.correct);
+    }
+
     const roundConfig = await this.getRoundConfig(session.roundKey);
     
     const updateData: any = {
@@ -102,13 +118,13 @@ export class GameService {
         answeredQuestions: {
           questionId,
           answer,
-          isCorrect,
+          isCorrect: isVerified,
           timestamp: new Date(),
         },
       },
     };
 
-    if (isCorrect) {
+    if (isVerified) {
       updateData.totalPoints = session.totalPoints + roundConfig.pointsPerCorrect;
       updateData.correctInLevel = session.correctInLevel + 1;
       updateData.consecutiveWrong = 0;
@@ -145,34 +161,51 @@ export class GameService {
       }
     }
 
-    return this.gameSessionModel.findByIdAndUpdate(sessionId, updateData, { new: true }).exec();
+    const updatedSession = await this.gameSessionModel.findByIdAndUpdate(sessionId, updateData, { new: true }).exec();
+
+    // Live-update team's maxLevelReached so leaderboard reflects progress during active play
+    if (isVerified && updatedSession && updatedSession.maxLevelReached > session.maxLevelReached) {
+      await this.teamModel.updateOne(
+        { teamName: session.teamName },
+        { $max: { [`roundStats.${session.roundKey}.maxLevelReached`]: updatedSession.maxLevelReached } }
+      );
+    }
+
+    return updatedSession;
+  }
+
+  async setCurrentQuestion(sessionId: string, questionId: number): Promise<GameSession> {
+    const updated = await this.gameSessionModel.findByIdAndUpdate(
+      sessionId,
+      { currentQuestionId: questionId, questionStartedAt: new Date() },
+      { new: true },
+    ).exec();
+    if (!updated) throw new NotFoundException('Session not found');
+    return updated;
   }
 
   async endSession(sessionId: string): Promise<GameSession> {
     const session = await this.gameSessionModel.findById(sessionId).exec();
-    
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
-    // If already finalized, return existing session
-    if (session.isFinalized) {
-      return session;
+    // Finalize session if not already
+    if (!session.isFinalized) {
+      session.status = 'completed';
+      session.completedAt = new Date();
+      session.isFinalized = true;
+
+      // Update max level reached one final time
+      if (session.currentLevel > session.maxLevelReached) {
+        session.maxLevelReached = session.currentLevel;
+      }
+
+      await session.save();
     }
 
-    // Update session status
-    session.status = 'completed';
-    session.completedAt = new Date();
-    session.isFinalized = true;
-    
-    // Update max level reached one final time
-    if (session.currentLevel > session.maxLevelReached) {
-      session.maxLevelReached = session.currentLevel;
-    }
-    
-    await session.save();
-
-    // Update team stats (idempotent)
+    // Always update team stats — idempotent check inside updateTeamStats
     await this.updateTeamStats(session);
 
     return session;
@@ -181,6 +214,12 @@ export class GameService {
   async updateTeamStats(session: GameSession) {
     const team = await this.teamModel.findOne({ teamName: session.teamName });
     if (!team) {
+      return;
+    }
+
+    // Idempotent: skip if this session was already counted
+    const sessionIdStr = (session as any)._id.toString();
+    if (team.sessionIds?.map(String).includes(sessionIdStr)) {
       return;
     }
 
@@ -229,12 +268,19 @@ export class GameService {
   }
 
   async getLeaderboard(roundKey: string = 'round1', limit: number = 10) {
-    const teams = await this.teamModel
-      .find({ isActive: true })
-      .select('teamName roundStats updatedAt')
-      .exec();
+    const [teams, activeSessions] = await Promise.all([
+      this.teamModel
+        .find({ isActive: true })
+        .select('teamName roundStats updatedAt')
+        .exec(),
+      this.gameSessionModel
+        .find({ roundKey, status: 'active' })
+        .select('teamName totalPoints maxLevelReached updatedAt')
+        .exec(),
+    ]);
 
-    // Sort by max level reached, then total points, then who reached it first
+    const activeMap = new Map(activeSessions.map(s => [s.teamName, s]));
+
     const sorted = teams
       .map(team => {
         const stats = team.roundStats?.[roundKey] || {
@@ -243,14 +289,16 @@ export class GameService {
           maxLevelReached: 0,
           sessionsPlayed: 0
         };
+        const active = activeMap.get(team.teamName);
 
         return {
           teamName: team.teamName,
-          maxLevelReached: stats.maxLevelReached,
-          totalPoints: stats.totalPoints,
-          bestPoints: stats.bestPoints,
+          maxLevelReached: Math.max(stats.maxLevelReached, active?.maxLevelReached || 0),
+          totalPoints: stats.totalPoints + (active?.totalPoints || 0),
+          bestPoints: Math.max(stats.bestPoints, active?.totalPoints || 0),
           sessionsPlayed: stats.sessionsPlayed,
-          lastUpdated: (team as any).updatedAt,
+          lastUpdated: (active as any)?.updatedAt?.toISOString() || (team as any).updatedAt?.toISOString() || '',
+          isActive: !!active,
         };
       })
       .sort((a, b) => {
@@ -260,7 +308,9 @@ export class GameService {
         if (b.totalPoints !== a.totalPoints) {
           return b.totalPoints - a.totalPoints;
         }
-        return new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime();
+        const aTime = a.lastUpdated ? new Date(a.lastUpdated).getTime() : Infinity;
+        const bTime = b.lastUpdated ? new Date(b.lastUpdated).getTime() : Infinity;
+        return aTime - bTime;
       })
       .slice(0, limit);
 

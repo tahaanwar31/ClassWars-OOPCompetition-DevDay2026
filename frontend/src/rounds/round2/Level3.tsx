@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, RotateCcw, Shield, Skull } from 'lucide-react';
 import TacticalBackground from '../../components/TacticalBackground';
 import { markLevelComplete } from './Round2Lobby';
+import { useContestTimer } from './useContestTimer';
 import CodeMirror from '@uiw/react-codemirror';
 import { cpp } from '@codemirror/lang-cpp';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -186,6 +187,7 @@ const terrainNoise = Array.from({ length: 100 }, (_, i) => {
 
 export default function Level3() {
   const navigate = useNavigate();
+  const { contestEnded } = useContestTimer('round2');
 
   const [code, setCode] = useState(() => getCppStarter());
   const [tankPos, setTankPos] = useState({ x: 0, y: 0 });
@@ -496,6 +498,16 @@ export default function Level3() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#ff6600] font-mono px-4 py-5 scanlines crt-flicker relative overflow-hidden">
       <TacticalBackground />
+
+      {/* Contest Ended Overlay */}
+      {contestEnded && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-400 text-3xl font-black tracking-[0.2em] mb-3">CONTEST ENDED</div>
+            <div className="text-white/30 text-sm tracking-widest">Redirecting to lobby...</div>
+          </div>
+        </div>
+      )}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute top-[-15%] right-[8%] h-[420px] w-[420px] rounded-full bg-[#ff0033]/[0.04] blur-[120px]" />
         <div className="absolute bottom-[-12%] left-[10%] h-[360px] w-[360px] rounded-full bg-[#ff6600]/[0.03] blur-[120px]" />

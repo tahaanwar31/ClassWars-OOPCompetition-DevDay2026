@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, RotateCcw, Crosshair } from 'lucide-react';
 import TacticalBackground from '../../components/TacticalBackground';
 import { markLevelComplete } from './Round2Lobby';
+import { useContestTimer } from './useContestTimer';
 import CodeMirror from '@uiw/react-codemirror';
 import { cpp } from '@codemirror/lang-cpp';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -130,9 +131,12 @@ const terrainNoise = Array.from({ length: 100 }, (_, i) => {
 
 export default function Level2() {
   const navigate = useNavigate();
+  const { contestEnded } = useContestTimer('round2');
 
   const [init] = useState(() => makeInitialState());
   const [enemies, setEnemies] = useState<Enemy[]>(init.enemies);
+  const enemiesRef = useRef(enemies);
+  enemiesRef.current = enemies;
   const [code, setCode] = useState<string>(init.code);
   const [tankPos, setTankPos] = useState({ x: 0, y: 0 });
   const [terminalLines, setTerminalLines] = useState<string[]>(['root@tank: scanning...']);
@@ -193,10 +197,6 @@ export default function Level2() {
         e.x === tx && e.y === ty ? { ...e, hit: true } : e
       ));
     }, 300);
-  }
-
-  function checkWin(currentEnemies: Enemy[]): boolean {
-    return currentEnemies.every(e => e.hit);
   }
 
   function handleReset() {
@@ -269,7 +269,7 @@ export default function Level2() {
       const processNext = async () => {
         while (i < lines.length) {
           if (abortRef.current) return;
-          const line = lines[i++];
+          const line = lines[i++].trim();
 
           if (line.startsWith('STEP:')) {
             const parts = line.split(':')[1].split(',').map(Number);
@@ -304,19 +304,16 @@ export default function Level2() {
 
         if (abortRef.current) return;
 
-        setEnemies(currentEnemies => {
-          const won = checkWin(currentEnemies);
-          if (won) {
-            setTerminalLines(prev => [...prev, '>> SUCCESS: LEVEL 2 CLEARED.']);
-            setResultStatus('success');
-          } else {
-            const destroyed = currentEnemies.filter(e => e.hit).length;
-            setTerminalLines(prev => [...prev, `>> PURGE FAILED — ${destroyed}/8 hostiles eliminated. All targets must be destroyed.`]);
-            setResultStatus('failure');
-          }
-          setCompiling(false);
-          return currentEnemies;
-        });
+        const won = enemiesRef.current.every(e => e.hit);
+        if (won) {
+          setTerminalLines(prev => [...prev, '>> SUCCESS: LEVEL 2 CLEARED.']);
+          setResultStatus('success');
+        } else {
+          const destroyed = enemiesRef.current.filter(e => e.hit).length;
+          setTerminalLines(prev => [...prev, `>> PURGE FAILED — ${destroyed}/8 hostiles eliminated. All targets must be destroyed.`]);
+          setResultStatus('failure');
+        }
+        setCompiling(false);
       };
 
       processNext();
@@ -332,6 +329,16 @@ export default function Level2() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#39ff14] font-mono px-4 py-5 scanlines crt-flicker relative overflow-hidden">
       <TacticalBackground />
+
+      {/* Contest Ended Overlay */}
+      {contestEnded && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-400 text-3xl font-black tracking-[0.2em] mb-3">CONTEST ENDED</div>
+            <div className="text-white/30 text-sm tracking-widest">Redirecting to lobby...</div>
+          </div>
+        </div>
+      )}
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute top-[-15%] left-[8%] h-[420px] w-[420px] rounded-full bg-[#ff0033]/[0.04] blur-[120px]" />

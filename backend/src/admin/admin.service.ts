@@ -161,12 +161,20 @@ export class AdminService {
   }
 
   async getLeaderboard(roundKey: string = 'round1') {
-    const teams = await this.teamModel
-      .find({ isActive: true })
-      .select('teamName roundStats updatedAt')
-      .exec();
+    const [teams, activeSessions] = await Promise.all([
+      this.teamModel
+        .find({ isActive: true })
+        .select('teamName roundStats updatedAt')
+        .exec(),
+      this.gameSessionModel
+        .find({ roundKey, status: 'active' })
+        .select('teamName totalPoints maxLevelReached updatedAt')
+        .exec(),
+    ]);
 
-    // Sort by max level reached, then total points, then who reached it first (earlier updatedAt wins)
+    const activeMap = new Map(activeSessions.map(s => [s.teamName, s]));
+
+    // Merge finalized team stats with active session data
     const sorted = teams
       .map(team => {
         const stats = team.roundStats?.[roundKey] || {
@@ -175,14 +183,16 @@ export class AdminService {
           maxLevelReached: 0,
           sessionsPlayed: 0
         };
+        const active = activeMap.get(team.teamName);
 
         return {
           teamName: team.teamName,
-          maxLevelReached: stats.maxLevelReached,
-          totalPoints: stats.totalPoints,
-          bestPoints: stats.bestPoints,
+          maxLevelReached: Math.max(stats.maxLevelReached, active?.maxLevelReached || 0),
+          totalPoints: stats.totalPoints + (active?.totalPoints || 0),
+          bestPoints: Math.max(stats.bestPoints, active?.totalPoints || 0),
           sessionsPlayed: stats.sessionsPlayed,
-          lastUpdated: (team as any).updatedAt,
+          lastUpdated: (active as any)?.updatedAt?.toISOString() || (team as any).updatedAt?.toISOString() || '',
+          isActive: !!active,
         };
       })
       .sort((a, b) => {
@@ -192,11 +202,20 @@ export class AdminService {
         if (b.totalPoints !== a.totalPoints) {
           return b.totalPoints - a.totalPoints;
         }
-        // Tie-break: who reached this level first
-        return new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime();
+        const aTime = a.lastUpdated ? new Date(a.lastUpdated).getTime() : Infinity;
+        const bTime = b.lastUpdated ? new Date(b.lastUpdated).getTime() : Infinity;
+        return aTime - bTime;
       });
 
     return sorted;
+  }
+
+  async getLeaderboardSummary() {
+    const [totalTeams, activeSessions] = await Promise.all([
+      this.teamModel.countDocuments({ isActive: true }),
+      this.gameSessionModel.countDocuments({ status: 'active' }),
+    ]);
+    return { totalTeams, activeTeams: activeSessions };
   }
 
   async updateRoundConfig(roundKey: string, roundData: any): Promise<any> {

@@ -123,7 +123,7 @@ export default function Round1() {
       setTotalTime(session.timeRemaining);
       
       // Mark already answered questions
-      const answeredIds = new Set(session.answeredQuestions.map((q: any) => q.questionId));
+      const answeredIds = new Set<number>(session.answeredQuestions.map((q: any) => q.questionId));
       setAnsweredQuestionIds(answeredIds);
     } catch (error) {
       console.error('Failed to create session:', error);

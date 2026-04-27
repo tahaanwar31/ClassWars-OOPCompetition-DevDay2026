@@ -65,108 +65,150 @@ export default function Teams() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading teams...</div>;
+    return (
+      <div className="flex items-center justify-center py-12 font-mono text-white/20 text-sm tracking-[0.1em]">
+        LOADING...
+      </div>
+    );
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Team Management</h1>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-xl font-mono font-bold text-white/80 tracking-[0.1em]">
+          TEAMS
+        </h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+          className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-white/60 hover:text-white/80 hover:border-[#39ff14]/30 font-mono text-xs tracking-[0.1em] transition-colors"
         >
-          <Plus className="w-5 h-5" />
-          Add Team
+          <Plus className="w-3.5 h-3.5" />
+          ADD TEAM
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Score</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Games Played</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Best Score</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {teams.map((team) => (
-              <tr key={team._id}>
-                <td className="px-6 py-4 whitespace-nowrap font-medium">{team.teamName}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{team.totalScore}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{team.gamesPlayed}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{team.bestScore}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded-full text-xs ${team.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {team.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleToggleStatus(team.teamName)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title={team.isActive ? 'Deactivate' : 'Activate'}
-                    >
-                      {team.isActive ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTeam(team.teamName)}
-                      className="text-red-600 hover:text-red-800"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </td>
+      {/* Table */}
+      <div className="bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Team Name</th>
+                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Score</th>
+                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Games</th>
+                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Best</th>
+                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Status</th>
+                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {teams.map((team) => (
+                <tr key={team._id} className="border-b border-white/[0.04]">
+                  <td className="px-5 py-3.5 font-mono text-sm text-white/80 whitespace-nowrap">
+                    {team.teamName}
+                  </td>
+                  <td className="px-5 py-3.5 font-mono text-sm text-white/60 whitespace-nowrap">
+                    {team.totalScore}
+                  </td>
+                  <td className="px-5 py-3.5 font-mono text-sm text-white/60 whitespace-nowrap">
+                    {team.gamesPlayed}
+                  </td>
+                  <td className="px-5 py-3.5 font-mono text-sm text-white/60 whitespace-nowrap">
+                    {team.bestScore}
+                  </td>
+                  <td className="px-5 py-3.5 whitespace-nowrap">
+                    <span
+                      className={`inline-block px-2.5 py-0.5 font-mono text-[11px] tracking-[0.1em] ${
+                        team.isActive
+                          ? 'bg-[#39ff14]/10 text-[#39ff14]/70'
+                          : 'bg-red-500/10 text-red-400/60'
+                      }`}
+                    >
+                      {team.isActive ? 'ACTIVE' : 'INACTIVE'}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleToggleStatus(team.teamName)}
+                        className="text-[#39ff14]/60 hover:text-[#39ff14] transition-colors"
+                        title={team.isActive ? 'Deactivate' : 'Activate'}
+                      >
+                        {team.isActive ? (
+                          <ToggleRight className="w-4 h-4" />
+                        ) : (
+                          <ToggleLeft className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTeam(team.teamName)}
+                        className="text-red-400/40 hover:text-red-400 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {teams.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center font-mono text-sm text-white/20">
+                    No teams found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* Add Team Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">Add New Team</h2>
-            <form onSubmit={handleAddTeam} className="space-y-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#111116] border border-white/[0.08] rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-mono font-bold text-white/80 tracking-[0.1em] mb-6">
+              ADD TEAM
+            </h2>
+            <form onSubmit={handleAddTeam} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-2">Team Name</label>
+                <label className="block text-[11px] tracking-[0.1em] text-white/40 font-mono mb-2">
+                  TEAM NAME
+                </label>
                 <input
                   type="text"
                   value={newTeam.teamName}
                   onChange={(e) => setNewTeam({ ...newTeam, teamName: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/80 font-mono text-sm outline-none focus:border-[#39ff14]/30 transition-colors"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Password</label>
+                <label className="block text-[11px] tracking-[0.1em] text-white/40 font-mono mb-2">
+                  PASSWORD
+                </label>
                 <input
                   type="password"
                   value={newTeam.password}
                   onChange={(e) => setNewTeam({ ...newTeam, password: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/80 font-mono text-sm outline-none focus:border-[#39ff14]/30 transition-colors"
                   required
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+                  className="flex-1 py-2.5 bg-[#39ff14]/10 border border-[#39ff14]/20 text-[#39ff14]/80 font-mono text-xs tracking-[0.1em] hover:bg-[#39ff14]/15 hover:border-[#39ff14]/30 transition-colors"
                 >
-                  Add Team
+                  ADD
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400"
+                  className="flex-1 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/40 font-mono text-xs tracking-[0.1em] hover:text-white/60 hover:border-white/[0.12] transition-colors"
                 >
-                  Cancel
+                  CANCEL
                 </button>
               </div>
             </form>

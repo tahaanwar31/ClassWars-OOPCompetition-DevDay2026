@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, RotateCcw } from 'lucide-react';
 import TacticalBackground from '../../components/TacticalBackground';
 import { markLevelComplete } from './Round2Lobby';
+import { useContestTimer } from './useContestTimer';
 import CodeMirror from '@uiw/react-codemirror';
 import { cpp } from '@codemirror/lang-cpp';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -113,6 +114,7 @@ function parseCompileError(output: string): string | null {
 
 export default function Round2() {
   const navigate = useNavigate();
+  const { contestEnded } = useContestTimer('round2');
 
   const [init] = useState(() => makeInitialState());
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>(init.checkpoints);
@@ -128,13 +130,6 @@ export default function Round2() {
 
   function sleep(ms: number) {
     return new Promise<void>(resolve => setTimeout(resolve, ms));
-  }
-
-  async function animateTank(
-    _targets: Array<{ x: number; y: number; label: string; cpIdx?: number }>,
-    _onDone: (reachedFinish: boolean) => void,
-  ) {
-    // Deprecated — animation now driven by STEP output in handleRun
   }
 
   function handleReset() {
@@ -282,6 +277,16 @@ export default function Round2() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#39ff14] font-mono px-4 py-5 scanlines crt-flicker relative overflow-hidden">
       <TacticalBackground />
+
+      {/* Contest Ended Overlay */}
+      {contestEnded && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-400 text-3xl font-black tracking-[0.2em] mb-3">CONTEST ENDED</div>
+            <div className="text-white/30 text-sm tracking-widest">Redirecting to lobby...</div>
+          </div>
+        </div>
+      )}
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute top-[-15%] left-[8%] h-[420px] w-[420px] rounded-full bg-[#39ff14]/[0.03] blur-[120px]" />

@@ -939,7 +939,10 @@ export default function Round1() {
   const [consecutiveWrong, setConsecutiveWrong] = useState(0);
   
   const [timeLeft, setTimeLeft] = useState(60);
-  const [totalTime, setTotalTime] = useState(3600); // 1 hour
+  const [totalTime, setTotalTime] = useState(3600); // 1 hour (fallback)
+  const [contestEndMs, setContestEndMs] = useState<number | null>(null);
+  const contestEndedRef = useRef(false);
+  const initialTotalTimeRef = useRef(3600);
   
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [answerInput, setAnswerInput] = useState('');
@@ -981,20 +984,77 @@ export default function Round1() {
       });
 
       const session = response.data;
+
+      // If session is already completed — go to game over immediately
+      if (session.status === 'completed' || session.isFinalized) {
+        setSessionId(session._id);
+        setLevel(session.currentLevel);
+        setPoints(session.totalPoints);
+        setCorrectInLevel(session.correctInLevel);
+        setConsecutiveWrong(session.consecutiveWrong);
+        setTotalTime(session.timeRemaining);
+        initialTotalTimeRef.current = session.timeRemaining;
+        setGameOver(true);
+        return;
+      }
+
+      // Do ALL async work BEFORE setting state to avoid useEffect race conditions
+
+      // Fetch round config for contest window
+      let contestEnd: number | null = null;
+      try {
+        const configRes = await api.get('/game/config/round/round1');
+        const config = configRes.data;
+        if (config.playWindowEnd) {
+          const endMs = new Date(config.playWindowEnd).getTime();
+          if (endMs > Date.now()) {
+            contestEnd = endMs;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch round config:', e);
+      }
+
+      // Restore current question from backend (survives page reload)
+      let restoredQuestion: any = null;
+      let restoredTimeLeft: number | null = null;
+      if (session.currentQuestionId) {
+        try {
+          const qRes = await api.get(`/questions/by-id/${session.currentQuestionId}`);
+          restoredQuestion = qRes.data;
+          if (session.questionStartedAt) {
+            const elapsed = Math.floor((Date.now() - new Date(session.questionStartedAt).getTime()) / 1000);
+            restoredTimeLeft = Math.max(0, 60 - elapsed);
+          }
+        } catch (e) {
+          console.error('Failed to restore current question:', e);
+        }
+      }
+
+      // NOW set all state at once — React batches these into a single render
       setSessionId(session._id);
       setLevel(session.currentLevel);
       setPoints(session.totalPoints);
       setCorrectInLevel(session.correctInLevel);
       setConsecutiveWrong(session.consecutiveWrong);
-      setTotalTime(session.timeRemaining);
-      
-      // If session is already completed (e.g., round was finished), go to game over
-      if (session.status === 'completed' || session.isFinalized) {
-        setGameOver(true);
+
+      if (contestEnd) {
+        setContestEndMs(contestEnd);
+        const contestSeconds = Math.floor((contestEnd - Date.now()) / 1000);
+        setTotalTime(contestSeconds);
+        initialTotalTimeRef.current = contestSeconds;
+      } else {
+        setTotalTime(session.timeRemaining);
+        initialTotalTimeRef.current = session.timeRemaining;
       }
-      
-      // Don't use backend's answered questions list — track locally per-level instead
-      // This way when demoted, those questions are available again on that level
+
+      if (restoredQuestion) {
+        setCurrentQuestion(restoredQuestion);
+        questionRestoredRef.current = true;
+        if (restoredTimeLeft !== null) {
+          setTimeLeft(restoredTimeLeft);
+        }
+      }
     } catch (error) {
       console.error('Failed to create session:', error);
     }
@@ -1080,6 +1140,12 @@ export default function Round1() {
       setAnswerInput('');
       setSelectedOption('');
       setFeedback(null);
+
+      // Persist current question to backend so reload resumes it
+      const sid = sessionIdRef.current;
+      if (sid) {
+        api.patch(`/game/session/${sid}/current-question`, { questionId: picked.id }).catch(() => {});
+      }
     } else {
       console.error('No questions available for level', targetLevel);
     }
@@ -1097,25 +1163,42 @@ export default function Round1() {
   }, [sessionId, initializeSession]);
 
   // Fetch first question once session is ready, and on every level change
+  // Skip on initial session load if question was restored from backend
+  const questionRestoredRef = useRef(false);
   useEffect(() => {
     if (sessionId) {
+      if (questionRestoredRef.current) {
+        questionRestoredRef.current = false;
+        return;
+      }
       setFeedback(null);
       pickQuestion(level);
     }
   }, [sessionId, level]);
 
-  // Timer effect — pure state updates only, NO side effects inside updaters
+  // Timer effect — contest-driven or fallback to totalTime
   useEffect(() => {
     if (!hasStarted || gameOver || feedback || showQuitModal) return;
 
     const timer = setInterval(() => {
-      setTotalTime(prev => {
-        if (prev <= 1) {
+      // Contest-driven timer
+      if (contestEndMs) {
+        const remaining = Math.max(0, Math.floor((contestEndMs - Date.now()) / 1000));
+        setTotalTime(remaining);
+        if (remaining <= 0 && !contestEndedRef.current) {
+          contestEndedRef.current = true;
           setGameOver(true);
-          return 0;
         }
-        return prev - 1;
-      });
+      } else {
+        // Fallback: decrement totalTime
+        setTotalTime(prev => {
+          if (prev <= 1) {
+            setGameOver(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
 
       setTimeLeft(prev => {
         if (prev <= 1) return 0; // Signal timeout — handled by separate effect below
@@ -1124,7 +1207,7 @@ export default function Round1() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [hasStarted, gameOver, feedback, showQuitModal, level]);
+  }, [hasStarted, gameOver, feedback, showQuitModal, level, contestEndMs]);
 
   // Watch for timeLeft hitting 0 and trigger timeout (outside state updater — no side effects in updaters)
   const timeoutFiredRef = useRef(false);
@@ -1324,7 +1407,7 @@ export default function Round1() {
             </p>
             <p className="flex justify-between items-center">
               <span className="text-[#39ff14]/50 tracking-widest text-xs">TIME ELAPSED</span>
-              <span className="text-white font-bold">{formatTime(3600 - totalTime)}</span>
+              <span className="text-white font-bold">{formatTime(Math.max(0, initialTotalTimeRef.current - totalTime))}</span>
             </p>
             <div className="h-px bg-gradient-to-r from-[#39ff14]/30 via-[#39ff14]/10 to-transparent mt-2" />
           </div>
@@ -1413,7 +1496,7 @@ export default function Round1() {
               [ MISSION BRIEF ]
             </button>
             <div className="flex flex-col items-end">
-              <span className="text-[9px] text-[#39ff14]/40 uppercase tracking-widest">MISSION CLOCK</span>
+              <span className="text-[9px] text-[#39ff14]/40 uppercase tracking-widest">{contestEndMs ? 'CONTEST CLOCK' : 'MISSION CLOCK'}</span>
               <span className={`text-lg font-black flex items-center gap-2 tabular-nums ${
                 totalTime <= 300 ? 'text-red-400 text-glow-red animate-pulse' : 'text-[#39ff14] text-glow'
               }`}>

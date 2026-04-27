@@ -88,6 +88,11 @@ export class AdminController {
   }
 
   // Leaderboard
+  @Get('leaderboard/summary')
+  async getLeaderboardSummary() {
+    return this.adminService.getLeaderboardSummary();
+  }
+
   @Get('leaderboard')
   async getLeaderboard(@Query('roundKey') roundKey?: string) {
     return this.adminService.getLeaderboard(roundKey || 'round1');

@@ -3,23 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Round1 from './rounds/round1/Round1';
-import Round2Lobby from './rounds/round2/Round2Lobby';
-import Round2 from './rounds/round2/Round2';
-import Level2 from './rounds/round2/Level2';
-import Level3 from './rounds/round2/Level3';
-import TeamLogin from './pages/TeamLogin';
-import CompetitionLobby from './pages/CompetitionLobby';
-import Login from './pages/admin/Login';
-import Dashboard from './pages/admin/Dashboard';
-import Questions from './pages/admin/Questions';
-import GameConfig from './pages/admin/GameConfig';
-import Sessions from './pages/admin/Sessions';
-import Teams from './pages/admin/Teams';
-import Leaderboard from './pages/admin/Leaderboard';
-import Layout from './components/admin/Layout';
+
+const Round1 = lazy(() => import('./rounds/round1/Round1'));
+const Round2Lobby = lazy(() => import('./rounds/round2/Round2Lobby'));
+const Round2 = lazy(() => import('./rounds/round2/Round2'));
+const Level2 = lazy(() => import('./rounds/round2/Level2'));
+const Level3 = lazy(() => import('./rounds/round2/Level3'));
+const TeamLogin = lazy(() => import('./pages/TeamLogin'));
+const CompetitionLobby = lazy(() => import('./pages/CompetitionLobby'));
+const Login = lazy(() => import('./pages/admin/Login'));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const Questions = lazy(() => import('./pages/admin/Questions'));
+const GameConfig = lazy(() => import('./pages/admin/GameConfig'));
+const Sessions = lazy(() => import('./pages/admin/Sessions'));
+const Teams = lazy(() => import('./pages/admin/Teams'));
+const Leaderboard = lazy(() => import('./pages/admin/Leaderboard'));
+const Layout = lazy(() => import('./components/admin/Layout'));
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -60,6 +61,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Router>
+        <Suspense fallback={<div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#555', fontFamily:'monospace' }}>LOADING...</div>}>
         <Routes>
           {/* Team Login */}
           <Route path="/" element={<TeamLogin />} />
@@ -99,6 +101,7 @@ export default function App() {
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </Router>
     </ErrorBoundary>
   );

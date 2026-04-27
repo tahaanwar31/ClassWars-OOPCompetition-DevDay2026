@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Target, Clock, AlertCircle } from 'lucide-react';
+import { Save, Target, Clock, AlertCircle, X, Timer, Calendar } from 'lucide-react';
 import api from '../../api/axios';
 
 interface RoundConfig {
@@ -21,16 +21,218 @@ interface RoundConfig {
   leaderboardEnabled: boolean;
 }
 
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return '00:00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}
+
+function getContestStatus(round: RoundConfig): { label: string; color: string; bg: string } {
+  const now = Date.now();
+  const start = round.playWindowStart ? new Date(round.playWindowStart).getTime() : null;
+  const end = round.playWindowEnd ? new Date(round.playWindowEnd).getTime() : null;
+
+  if (!start && !end) return { label: 'NO WINDOW SET', color: '#94a3b8', bg: 'rgba(148,163,184,0.08)' };
+  if (start && now < start) return { label: 'UPCOMING', color: '#facc15', bg: 'rgba(250,204,21,0.08)' };
+  if (end && now > end) return { label: 'ENDED', color: '#ef4444', bg: 'rgba(239,68,68,0.08)' };
+  return { label: 'RUNNING', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' };
+}
+
+function roundToNearest5Min(date: Date): Date {
+  const d = new Date(date);
+  d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
+  return d;
+}
+
+function toLocalISO(date: Date): string {
+  const y = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  return `${y}-${mo}-${d}T${h}:${mi}`;
+}
+
+function formatTime12(date: Date): string {
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function formatDateShort(date: Date): string {
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+const toDT = (val: string | null) => {
+  if (!val) return '';
+  const d = new Date(val);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+const inputCls = 'w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-sm text-white/80 text-sm focus:outline-none focus:border-[#39ff14]/30';
+const labelCls = 'block text-[11px] tracking-[0.1em] text-white/40 uppercase mb-1.5';
+const sectionTitleCls = 'text-xs font-bold tracking-[0.15em] text-white/50 border-b border-white/[0.06] pb-2 mb-4';
+
+function ContestWindowPicker({
+  round,
+  contestStatus,
+  durationSec,
+  countdownLabel,
+  countdownMs,
+  onUpdate,
+}: {
+  round: RoundConfig;
+  contestStatus: { label: string; color: string; bg: string };
+  durationSec: number | null;
+  countdownLabel: string;
+  countdownMs: number;
+  onUpdate: (updates: Partial<RoundConfig>) => void;
+}) {
+  const startDate = round.playWindowStart ? new Date(round.playWindowStart) : null;
+  const endDate = round.playWindowEnd ? new Date(round.playWindowEnd) : null;
+
+  // Draft state — only applied on "Set" click
+  const [draftOpen, setDraftOpen] = useState<string>(toDT(round.playWindowStart));
+  const [draftClose, setDraftClose] = useState<string>(toDT(round.playWindowEnd));
+
+  // Sync draft when parent data changes (e.g. after save + refetch)
+  useEffect(() => {
+    setDraftOpen(toDT(round.playWindowStart));
+    setDraftClose(toDT(round.playWindowEnd));
+  }, [round.playWindowStart, round.playWindowEnd]);
+
+  const handleSet = () => {
+    const openIso = draftOpen ? new Date(draftOpen).toISOString() : null;
+    const closeIso = draftClose ? new Date(draftClose).toISOString() : null;
+    onUpdate({
+      playWindowStart: openIso,
+      playWindowEnd: closeIso,
+      startTime: openIso,
+      endTime: closeIso,
+    });
+  };
+
+  const hasChanges = draftOpen !== toDT(round.playWindowStart) || draftClose !== toDT(round.playWindowEnd);
+
+  return (
+    <div className="mx-5 mt-5 border border-white/[0.08] bg-white/[0.02] p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-white/25" />
+          <h3 className="text-[10px] font-bold tracking-[0.2em] text-white/40">CONTEST WINDOW</h3>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="px-2.5 py-0.5 text-[9px] font-bold tracking-[0.15em] rounded-full"
+            style={{ color: contestStatus.color, background: contestStatus.bg, border: `1px solid ${contestStatus.color}25` }}>
+            {contestStatus.label}
+          </span>
+          <span className="text-[9px] text-white/15 tracking-wider">
+            {Intl.DateTimeFormat().resolvedOptions().timeZone}
+          </span>
+        </div>
+      </div>
+
+      {/* Date/Time Pickers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className={labelCls}>OPENS</label>
+          <input
+            type="datetime-local"
+            value={draftOpen}
+            onChange={(e) => setDraftOpen(e.target.value)}
+            className={inputCls}
+            step={300}
+          />
+          {draftOpen && (
+            <div className="text-[10px] text-white/25 mt-1.5">
+              {formatDateShort(new Date(draftOpen))} at {formatTime12(new Date(draftOpen))}
+            </div>
+          )}
+        </div>
+        <div>
+          <label className={labelCls}>CLOSES</label>
+          <input
+            type="datetime-local"
+            value={draftClose}
+            onChange={(e) => setDraftClose(e.target.value)}
+            className={inputCls}
+            step={300}
+          />
+          {draftClose && (
+            <div className="text-[10px] text-white/25 mt-1.5">
+              {formatDateShort(new Date(draftClose))} at {formatTime12(new Date(draftClose))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Action row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSet}
+            disabled={!hasChanges}
+            className={`flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold tracking-[0.1em] border transition ${
+              hasChanges
+                ? 'border-[#39ff14]/40 bg-[#39ff14]/10 text-[#39ff14] hover:bg-[#39ff14]/20'
+                : 'border-white/[0.06] text-white/15 cursor-not-allowed'
+            }`}
+          >
+            SET
+          </button>
+          {(round.playWindowStart || round.playWindowEnd) && (
+            <button
+              onClick={() => {
+                setDraftOpen('');
+                setDraftClose('');
+                onUpdate({ playWindowStart: null, playWindowEnd: null, startTime: null, endTime: null });
+              }}
+              className="flex items-center gap-1 text-white/15 hover:text-red-400/60 transition text-[10px] tracking-wider"
+            >
+              <X className="w-3 h-3" />Clear
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-4 text-[10px] text-white/25">
+          {durationSec !== null && durationSec > 0 && (
+            <span className="flex items-center gap-1"><Timer className="w-3 h-3" />{formatDuration(durationSec)}</span>
+          )}
+          {countdownLabel && countdownMs > 0 && (
+            <span className="flex items-center gap-1 text-white/60 font-mono font-bold">
+              <Clock className="w-3 h-3 text-green-400/60" />{countdownLabel}: {formatCountdown(countdownMs)}
+            </span>
+          )}
+          {countdownLabel === 'Ended' && <span className="text-red-400/60">Contest ended</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function GameConfig() {
   const [rounds, setRounds] = useState<RoundConfig[]>([]);
   const [generalRules, setGeneralRules] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [savingGeneral, setSavingGeneral] = useState(false);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    fetchRounds();
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => { fetchRounds(); }, []);
 
   const fetchRounds = async () => {
     try {
@@ -49,25 +251,16 @@ export default function GameConfig() {
     try {
       const round = rounds.find(r => r.roundKey === roundKey);
       if (!round) return;
-
-      // Validate timing
       if (round.endTime && round.startTime && new Date(round.endTime) <= new Date(round.startTime)) {
-        alert('End time must be after start time');
-        setSaving(null);
-        return;
+        alert('End time must be after start time'); setSaving(null); return;
       }
-
       if (round.playWindowEnd && round.playWindowStart && new Date(round.playWindowEnd) <= new Date(round.playWindowStart)) {
-        alert('Play window end must be after play window start');
-        setSaving(null);
-        return;
+        alert('Contest close time must be after open time'); setSaving(null); return;
       }
-
       await api.put(`/admin/config/rounds/${roundKey}`, round);
-      alert(`${round.roundName} configuration saved successfully!`);
+      alert(`${round.roundName} saved.`);
     } catch (error: any) {
-      console.error('Failed to save round config:', error);
-      alert(error.response?.data?.message || 'Failed to save configuration');
+      alert(error.response?.data?.message || 'Failed to save');
     } finally {
       setSaving(null);
     }
@@ -77,355 +270,194 @@ export default function GameConfig() {
     setSavingGeneral(true);
     try {
       await api.put('/admin/config/general-rules', { generalRules });
-      alert('General rules saved successfully!');
+      alert('General rules saved.');
     } catch (error: any) {
-      console.error('Failed to save general rules:', error);
-      alert(error.response?.data?.message || 'Failed to save general rules');
+      alert(error.response?.data?.message || 'Failed to save');
     } finally {
       setSavingGeneral(false);
     }
   };
 
   const updateRound = (roundKey: string, updates: Partial<RoundConfig>) => {
-    setRounds(rounds.map(r => 
-      r.roundKey === roundKey ? { ...r, ...updates } : r
-    ));
+    setRounds(rounds.map(r => r.roundKey === roundKey ? { ...r, ...updates } : r));
   };
 
   const updateRoundRule = (roundKey: string, index: number, value: string) => {
     setRounds(rounds.map(r => {
-      if (r.roundKey === roundKey) {
-        const newRules = [...r.rules];
-        newRules[index] = value;
-        return { ...r, rules: newRules };
-      }
+      if (r.roundKey === roundKey) { const rules = [...r.rules]; rules[index] = value; return { ...r, rules }; }
       return r;
     }));
   };
 
   const addRoundRule = (roundKey: string) => {
-    setRounds(rounds.map(r => {
-      if (r.roundKey === roundKey) {
-        return { ...r, rules: [...r.rules, ''] };
-      }
-      return r;
-    }));
+    setRounds(rounds.map(r => r.roundKey === roundKey ? { ...r, rules: [...r.rules, ''] } : r));
   };
 
   const removeRoundRule = (roundKey: string, index: number) => {
-    setRounds(rounds.map(r => {
-      if (r.roundKey === roundKey) {
-        return { ...r, rules: r.rules.filter((_, i) => i !== index) };
-      }
-      return r;
-    }));
+    setRounds(rounds.map(r => r.roundKey === roundKey ? { ...r, rules: r.rules.filter((_, i) => i !== index) } : r));
   };
 
   const updateGeneralRule = (index: number, value: string) => {
-    const newRules = [...generalRules];
-    newRules[index] = value;
-    setGeneralRules(newRules);
+    const r = [...generalRules]; r[index] = value; setGeneralRules(r);
   };
 
-  const addGeneralRule = () => {
-    setGeneralRules([...generalRules, '']);
-  };
+  const addGeneralRule = () => setGeneralRules([...generalRules, '']);
+  const removeGeneralRule = (index: number) => setGeneralRules(generalRules.filter((_, i) => i !== index));
 
-  const removeGeneralRule = (index: number) => {
-    setGeneralRules(generalRules.filter((_, i) => i !== index));
-  };
-
-  if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
-  }
+  if (loading) return <div className="text-white/20 text-sm tracking-[0.1em] text-center py-12 animate-pulse">LOADING...</div>;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Round Configuration</h1>
-      <p className="text-gray-600">Manage settings for each competition round</p>
+      <h1 className="text-xl font-bold tracking-[0.15em] text-white/80">CONFIGURATION</h1>
 
-      {/* General Rules Section */}
-      <div className="bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+      {/* General Rules */}
+      <div className="border border-white/[0.06] bg-white/[0.02] p-5">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold">General Competition Rules</h2>
-            <p className="text-sm opacity-90 mt-1">These rules appear in the competition lobby for all teams</p>
-          </div>
-          <button
-            onClick={handleSaveGeneralRules}
-            disabled={savingGeneral}
-            className="flex items-center gap-2 px-6 py-2 bg-white text-blue-600 rounded-md hover:bg-gray-100 disabled:bg-gray-300 font-semibold"
-          >
-            <Save className="w-5 h-5" />
-            {savingGeneral ? 'Saving...' : 'Save Rules'}
+          <h2 className="text-xs font-bold tracking-[0.15em] text-white/50">GENERAL RULES</h2>
+          <button onClick={handleSaveGeneralRules} disabled={savingGeneral}
+            className="flex items-center gap-2 px-4 py-1.5 bg-[#39ff14]/10 border border-[#39ff14]/30 text-[#39ff14] text-[10px] font-bold tracking-[0.1em] hover:bg-[#39ff14]/20 transition disabled:opacity-40">
+            <Save className="w-3.5 h-3.5" />
+            {savingGeneral ? 'SAVING...' : 'SAVE'}
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {generalRules.map((rule, index) => (
             <div key={index} className="flex gap-2">
-              <input
-                type="text"
-                value={rule}
-                onChange={(e) => updateGeneralRule(index, e.target.value)}
-                placeholder="Enter general rule..."
-                className="flex-1 px-4 py-2 rounded-md text-gray-900 focus:ring-2 focus:ring-white"
-              />
-              <button
-                onClick={() => removeGeneralRule(index)}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-              >
-                Remove
-              </button>
+              <input type="text" value={rule} onChange={(e) => updateGeneralRule(index, e.target.value)}
+                placeholder="Enter rule..." className={`${inputCls} flex-1`} />
+              <button onClick={() => removeGeneralRule(index)}
+                className="px-3 py-2 text-red-400/50 hover:text-red-400 text-[10px] tracking-wider border border-red-400/20 hover:border-red-400/40 transition">REMOVE</button>
             </div>
           ))}
-          <button
-            onClick={addGeneralRule}
-            className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-md hover:bg-white/30"
-          >
-            + Add General Rule
+          <button onClick={addGeneralRule}
+            className="px-4 py-2 text-white/30 hover:text-white/50 text-[10px] tracking-[0.1em] border border-white/[0.06] hover:border-white/[0.12] transition">
+            + ADD RULE
           </button>
         </div>
       </div>
 
-      <div className="space-y-8">
-        {rounds.map((round) => (
-          <div key={round.roundKey} className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Target className="w-8 h-8 text-blue-600" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{round.roundName}</h2>
-                  <p className="text-sm text-gray-500">Key: {round.roundKey}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => handleSaveRound(round.roundKey)}
-                disabled={saving === round.roundKey}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 font-semibold"
-              >
-                <Save className="w-5 h-5" />
-                {saving === round.roundKey ? 'Saving...' : 'Save'}
-              </button>
-            </div>
+      {/* Round Configs */}
+      <div className="space-y-4">
+        {rounds.map((round) => {
+          const contestStatus = getContestStatus(round);
+          const startMs = round.playWindowStart ? new Date(round.playWindowStart).getTime() : null;
+          const endMs = round.playWindowEnd ? new Date(round.playWindowEnd).getTime() : null;
+          const durationSec = (startMs && endMs) ? Math.round((endMs - startMs) / 1000) : null;
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Status Settings */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg text-gray-800 border-b pb-2">Status Settings</h3>
-                
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={round.enabled}
-                      onChange={(e) => updateRound(round.roundKey, { enabled: e.target.checked })}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm font-medium">Enabled</span>
-                  </label>
-                  
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={round.underConstruction}
-                      onChange={(e) => updateRound(round.roundKey, { underConstruction: e.target.checked })}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm font-medium">Under Construction</span>
-                  </label>
+          let countdownLabel = '';
+          let countdownMs = 0;
+          if (startMs && now < startMs) { countdownLabel = 'Starts in'; countdownMs = startMs - now; }
+          else if (endMs && now <= endMs) { countdownLabel = 'Ends in'; countdownMs = endMs - now; }
+          else if (endMs && now > endMs) { countdownLabel = 'Ended'; }
 
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={round.leaderboardEnabled}
-                      onChange={(e) => updateRound(round.roundKey, { leaderboardEnabled: e.target.checked })}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm font-medium">Leaderboard</span>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                  <select
-                    value={round.status}
-                    onChange={(e) => updateRound(round.roundKey, { status: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="ended">Ended</option>
-                    <option value="under_construction">Under Construction</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Start Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={round.startTime ? new Date(round.startTime).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => updateRound(round.roundKey, { startTime: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    End Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={round.endTime ? new Date(round.endTime).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => updateRound(round.roundKey, { endTime: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="pt-4 border-t">
-                  <h4 className="font-semibold text-gray-800 mb-3">Play Access Window</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Play Window Start
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={round.playWindowStart ? new Date(round.playWindowStart).toISOString().slice(0, 16) : ''}
-                        onChange={(e) => updateRound(round.roundKey, { playWindowStart: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">When teams can start playing</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Play Window End
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={round.playWindowEnd ? new Date(round.playWindowEnd).toISOString().slice(0, 16) : ''}
-                        onChange={(e) => updateRound(round.roundKey, { playWindowEnd: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">When teams can no longer play</p>
-                    </div>
+          return (
+            <div key={round.roundKey} className="border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+                <div className="flex items-center gap-3">
+                  <Target className="w-5 h-5 text-white/30" />
+                  <div>
+                    <h2 className="text-sm font-bold tracking-[0.12em] text-white/80">{round.roundName.toUpperCase()}</h2>
+                    <p className="text-[10px] text-white/20 tracking-wider">{round.roundKey}</p>
                   </div>
                 </div>
-              </div>
-
-              {/* Gameplay Settings */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg text-gray-800 border-b pb-2">Gameplay Settings</h3>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Total Game Time (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    value={round.totalGameTimeSeconds}
-                    onChange={(e) => updateRound(round.roundKey, { totalGameTimeSeconds: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {Math.floor(round.totalGameTimeSeconds / 60)} minutes
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Question Timeout (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    value={round.questionTimeoutSeconds}
-                    onChange={(e) => updateRound(round.roundKey, { questionTimeoutSeconds: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Points Per Correct Answer
-                  </label>
-                  <input
-                    type="number"
-                    value={round.pointsPerCorrect}
-                    onChange={(e) => updateRound(round.roundKey, { pointsPerCorrect: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Consecutive Wrong (before level down)
-                  </label>
-                  <input
-                    type="number"
-                    value={round.maxConsecutiveWrong}
-                    onChange={(e) => updateRound(round.roundKey, { maxConsecutiveWrong: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Maximum Level
-                  </label>
-                  <input
-                    type="number"
-                    value={round.maxLevel}
-                    onChange={(e) => updateRound(round.roundKey, { maxLevel: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Rules Section */}
-            <div className="mt-6">
-              <h3 className="font-semibold text-lg text-gray-800 border-b pb-2 mb-4">Rules</h3>
-              <div className="space-y-3">
-                {round.rules.map((rule, index) => (
-                  <div key={index} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={rule}
-                      onChange={(e) => updateRoundRule(round.roundKey, index, e.target.value)}
-                      placeholder="Enter rule..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      onClick={() => removeRoundRule(round.roundKey, index)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => addRoundRule(round.roundKey)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  + Add Rule
+                <button onClick={() => handleSaveRound(round.roundKey)} disabled={saving === round.roundKey}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-[#39ff14]/10 border border-[#39ff14]/30 text-[#39ff14] text-[10px] font-bold tracking-[0.1em] hover:bg-[#39ff14]/20 transition disabled:opacity-40">
+                  <Save className="w-3.5 h-3.5" />
+                  {saving === round.roundKey ? 'SAVING...' : 'SAVE'}
                 </button>
               </div>
-            </div>
 
-            {round.underConstruction && (
-              <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-yellow-800">
-                  <strong>Under Construction:</strong> This round is marked as under construction and will not be accessible to teams, even if enabled.
+              {/* Contest Window */}
+              <ContestWindowPicker
+                round={round}
+                contestStatus={contestStatus}
+                durationSec={durationSec}
+                countdownLabel={countdownLabel}
+                countdownMs={countdownMs}
+                onUpdate={(updates) => updateRound(round.roundKey, updates)}
+              />
+
+              {/* Settings Grid */}
+              <div className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Status */}
+                  <div className="space-y-3">
+                    <h3 className={sectionTitleCls}>STATUS</h3>
+                    <div className="flex items-center gap-5">
+                      {[
+                        { checked: round.enabled, onChange: (v: boolean) => updateRound(round.roundKey, { enabled: v }), label: 'Enabled' },
+                        { checked: round.underConstruction, onChange: (v: boolean) => updateRound(round.roundKey, { underConstruction: v }), label: 'Construction' },
+                        { checked: round.leaderboardEnabled, onChange: (v: boolean) => updateRound(round.roundKey, { leaderboardEnabled: v }), label: 'Leaderboard' },
+                      ].map((cb, i) => (
+                        <label key={i} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={cb.checked} onChange={(e) => cb.onChange(e.target.checked)}
+                            className="w-3.5 h-3.5 accent-[#39ff14]" />
+                          <span className="text-[11px] text-white/40 tracking-wide">{cb.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div>
+                      <label className={labelCls}>Round Status</label>
+                      <select value={round.status} onChange={(e) => updateRound(round.roundKey, { status: e.target.value })} className={inputCls}>
+                        <option value="active">Active</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="ended">Ended</option>
+                        <option value="under_construction">Under Construction</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Gameplay */}
+                  <div className="space-y-3">
+                    <h3 className={sectionTitleCls}>GAMEPLAY</h3>
+                    {[
+                      { label: 'Game Time (seconds)', value: round.totalGameTimeSeconds, key: 'totalGameTimeSeconds' as const, hint: `${Math.floor(round.totalGameTimeSeconds / 60)} min` },
+                      { label: 'Question Timeout (seconds)', value: round.questionTimeoutSeconds, key: 'questionTimeoutSeconds' as const },
+                      { label: 'Points Per Correct', value: round.pointsPerCorrect, key: 'pointsPerCorrect' as const },
+                      { label: 'Max Consecutive Wrong', value: round.maxConsecutiveWrong, key: 'maxConsecutiveWrong' as const },
+                      { label: 'Max Level', value: round.maxLevel, key: 'maxLevel' as const },
+                    ].map((field) => (
+                      <div key={field.key}>
+                        <label className={labelCls}>{field.label}</label>
+                        <input type="number" value={field.value}
+                          onChange={(e) => updateRound(round.roundKey, { [field.key]: parseInt(e.target.value) || 0 })}
+                          className={inputCls} />
+                        {field.hint && <p className="text-[10px] text-white/15 mt-1">{field.hint}</p>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Rules */}
+                <div className="mt-5">
+                  <h3 className={sectionTitleCls}>RULES</h3>
+                  <div className="space-y-2">
+                    {round.rules.map((rule, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input type="text" value={rule} onChange={(e) => updateRoundRule(round.roundKey, index, e.target.value)}
+                          placeholder="Enter rule..." className={`${inputCls} flex-1`} />
+                        <button onClick={() => removeRoundRule(round.roundKey, index)}
+                          className="px-3 py-2 text-red-400/40 hover:text-red-400 text-[10px] border border-red-400/15 hover:border-red-400/30 transition">REMOVE</button>
+                      </div>
+                    ))}
+                    <button onClick={() => addRoundRule(round.roundKey)}
+                      className="px-4 py-2 text-white/25 hover:text-white/50 text-[10px] tracking-wider border border-white/[0.06] hover:border-white/[0.12] transition">
+                      + ADD RULE
+                    </button>
+                  </div>
+                </div>
+
+                {round.underConstruction && (
+                  <div className="mt-4 border border-yellow-500/20 bg-yellow-500/5 p-3 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-yellow-500/50 shrink-0 mt-0.5" />
+                    <span className="text-[11px] text-yellow-400/60">Under construction — not accessible to teams even if enabled.</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

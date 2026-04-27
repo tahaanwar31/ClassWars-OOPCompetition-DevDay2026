@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, Query } from '@nestjs/common';
 import { GameService } from './game.service';
 
 @Controller('game')
@@ -26,6 +26,14 @@ export class GameController {
   @Post('session/:id/end')
   async endSession(@Param('id') id: string) {
     return this.gameService.endSession(id);
+  }
+
+  @Patch('session/:id/current-question')
+  async setCurrentQuestion(
+    @Param('id') id: string,
+    @Body() body: { questionId: number },
+  ) {
+    return this.gameService.setCurrentQuestion(id, body.questionId);
   }
 
   @Get('leaderboard')

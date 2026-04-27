@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Lock, Construction, ChevronRight, Target, AlertCircle, Power, Crosshair } from 'lucide-react';
+import { Clock, Lock, Construction, ChevronRight, Target, AlertCircle, Power, Crosshair, Timer } from 'lucide-react';
 import CWEmblem from '../components/CWEmblem';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalBackground from '../components/TacticalBackground';
@@ -26,11 +26,27 @@ interface CompetitionData {
   rounds: RoundInfo[];
 }
 
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return '00:00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 export default function CompetitionLobby() {
   const navigate = useNavigate();
   const [competitionData, setCompetitionData] = useState<CompetitionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [teamName, setTeamName] = useState('');
+  const [tick, setTick] = useState(0);
+
+  // Live countdown tick every second
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const storedTeamName = localStorage.getItem('teamName');
@@ -245,35 +261,65 @@ export default function CompetitionLobby() {
                 {/* Divider */}
                 <div className="h-px mb-4" style={{ background: active ? `rgba(${accentRgb},0.2)` : 'rgba(255,255,255,0.05)' }} />
 
-                {/* Timing */}
-                {(round.playWindowStart || round.playWindowEnd || round.startTime || round.endTime) && (
-                  <div className="mb-4 space-y-1.5">
-                    {round.playWindowStart && (
-                      <div className="flex items-center gap-2 text-xs" style={{ color: `rgba(${accentRgb},0.6)` }}>
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span className="tracking-[0.12em]">OPENS: {formatDate(round.playWindowStart)}</span>
+                {/* Live Countdown */}
+                {(() => {
+                  const nowMs = Date.now();
+                  const startMs = round.playWindowStart ? new Date(round.playWindowStart).getTime() : null;
+                  const endMs = round.playWindowEnd ? new Date(round.playWindowEnd).getTime() : null;
+
+                  // No window set
+                  if (!startMs && !endMs) return null;
+
+                  // Before start
+                  if (startMs && nowMs < startMs) {
+                    return (
+                      <div className="mb-4 p-3 border rounded-sm" style={{ borderColor: `rgba(${accentRgb},0.2)`, background: `rgba(${accentRgb},0.04)` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Timer className="w-3.5 h-3.5" style={{ color: accent }} />
+                          <span className="text-[9px] tracking-[0.25em] font-bold" style={{ color: `rgba(${accentRgb},0.7)` }}>CONTEST COUNTDOWN</span>
+                        </div>
+                        <div className="text-2xl font-black font-mono tabular-nums tracking-wider" style={{ color: accent, textShadow: `0 0 20px rgba(${accentRgb},0.3)` }}>
+                          {formatCountdown(startMs - nowMs)}
+                        </div>
+                        <div className="text-[9px] tracking-[0.2em] mt-1" style={{ color: `rgba(${accentRgb},0.4)` }}>
+                          OPENS {formatDate(round.playWindowStart!)}
+                        </div>
                       </div>
-                    )}
-                    {round.playWindowEnd && (
-                      <div className="flex items-center gap-2 text-xs" style={{ color: `rgba(${accentRgb},0.6)` }}>
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span className="tracking-[0.12em]">CLOSES: {formatDate(round.playWindowEnd)}</span>
+                    );
+                  }
+
+                  // During window
+                  if (endMs && nowMs <= endMs) {
+                    return (
+                      <div className="mb-4 p-3 border rounded-sm" style={{ borderColor: 'rgba(34,197,94,0.25)', background: 'rgba(34,197,94,0.04)' }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Timer className="w-3.5 h-3.5 text-green-400" />
+                          <span className="text-[9px] tracking-[0.25em] font-bold text-green-400/70">TIME REMAINING</span>
+                        </div>
+                        <div className="text-2xl font-black font-mono tabular-nums tracking-wider text-green-400" style={{ textShadow: '0 0 20px rgba(34,197,94,0.3)' }}>
+                          {formatCountdown(endMs - nowMs)}
+                        </div>
+                        <div className="text-[9px] tracking-[0.2em] mt-1 text-green-400/40">
+                          CLOSES {formatDate(round.playWindowEnd!)}
+                        </div>
                       </div>
-                    )}
-                    {round.startTime && !round.playWindowStart && (
-                      <div className="flex items-center gap-2 text-xs" style={{ color: `rgba(${accentRgb},0.6)` }}>
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span className="tracking-[0.12em]">START: {formatDate(round.startTime)}</span>
+                    );
+                  }
+
+                  // After end
+                  if (endMs && nowMs > endMs) {
+                    return (
+                      <div className="mb-4 p-3 border border-red-500/20 bg-red-500/5 rounded-sm">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-red-400/60" />
+                          <span className="text-[10px] tracking-[0.2em] font-bold text-red-400/60">CONTEST ENDED</span>
+                        </div>
                       </div>
-                    )}
-                    {round.endTime && !round.playWindowEnd && (
-                      <div className="flex items-center gap-2 text-xs" style={{ color: `rgba(${accentRgb},0.6)` }}>
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span className="tracking-[0.12em]">END: {formatDate(round.endTime)}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                    );
+                  }
+
+                  return null;
+                })()}
 
                 {/* Rules — flex-1 so both cards push button to same bottom */}
                 <div className="flex-1 mb-6 relative z-10">

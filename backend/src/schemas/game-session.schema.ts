@@ -45,6 +45,12 @@ export class GameSession {
 
   @Prop({ default: false })
   isFinalized: boolean;
+
+  @Prop({ default: null })
+  currentQuestionId: number;
+
+  @Prop({ default: null })
+  questionStartedAt: Date;
 }
 
 export const GameSessionSchema = SchemaFactory.createForClass(GameSession);

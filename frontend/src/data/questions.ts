@@ -20,7 +20,7 @@ export const questionBank: Question[] = [
 
   // Level 2: Constructors & Destructors (6-10)
   { id: 6, level: 2, type: 'mcq', text: 'You rarely call me directly, yet I appear whenever a new object is created. What am I?', options: ['A) Destructor', 'B) Constructor', 'C) Initializer', 'D) Operator'], correct: 'B) Constructor' },
-  { id: 7, level: 2, type: 'mcq', text: 'When an object's life comes to an end, I quietly clean up the resources it used. What am I?', options: ['A) Constructor', 'B) Finalizer', 'C) Destructor', 'D) Cleanup Handler'], correct: 'C) Destructor' },
+  { id: 7, level: 2, type: 'mcq', text: `When an object's life comes to an end, I quietly clean up the resources it used. What am I?`, options: ['A) Constructor', 'B) Finalizer', 'C) Destructor', 'D) Cleanup Handler'], correct: 'C) Destructor' },
   { id: 8, level: 2, type: 'mcq', text: 'Which function runs when an object is created?', options: ['A) Destructor', 'B) Constructor', 'C) Operator', 'D) Friend'], correct: 'B) Constructor' },
   { id: 9, level: 2, type: 'mcq', text: 'Which function runs when an object is destroyed?', options: ['A) Constructor', 'B) Destructor', 'C) Static', 'D) Main'], correct: 'B) Destructor' },
   { id: 10, level: 2, type: 'mcq', text: 'Can constructors be virtual?', options: ['A) Yes', 'B) No'], correct: 'B) No' },

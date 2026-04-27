@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, CheckCircle, ChevronRight, Crosshair, Skull } from 'lucide-react';
+import { ArrowLeft, Lock, CheckCircle, ChevronRight, Crosshair, Skull, Timer } from 'lucide-react';
 import TacticalBackground from '../../components/TacticalBackground';
 import { motion } from 'motion/react';
+import api from '../../api/axios';
 
 const ACCENT = '#ff6600';
 const ACCENT_RGB = '255,102,0';
@@ -65,10 +66,55 @@ function markLevelComplete(levelId: number) {
 
 export { markLevelComplete };
 
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return '00:00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 export default function Round2Lobby() {
   const navigate = useNavigate();
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [teamName, setTeamName] = useState('');
+  const [contestEndMs, setContestEndMs] = useState<number | null>(null);
+  const [contestEnded, setContestEnded] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  // Live countdown tick every second
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch round config for contest window
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await api.get('/game/config/round/round2');
+        if (res.data.playWindowEnd) {
+          const endMs = new Date(res.data.playWindowEnd).getTime();
+          if (endMs > Date.now()) {
+            setContestEndMs(endMs);
+          } else {
+            setContestEnded(true);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch round config:', e);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  // Check contest expiry on tick
+  useEffect(() => {
+    if (contestEndMs && Date.now() >= contestEndMs) {
+      setContestEnded(true);
+    }
+  }, [tick, contestEndMs]);
 
   useEffect(() => {
     const stored = localStorage.getItem('teamName');
@@ -81,6 +127,7 @@ export default function Round2Lobby() {
   }, [navigate]);
 
   const handleEnterLevel = (level: LevelInfo) => {
+    if (contestEnded) return;
     if (level.id > 1 && !completed.has(level.id - 1)) return;
     if (completed.has(level.id)) return;
     navigate(level.path);
@@ -133,6 +180,32 @@ export default function Round2Lobby() {
             <ArrowLeft className="h-4 w-4" /> BACK
           </button>
         </div>
+
+        {/* Contest Timer */}
+        {contestEnded ? (
+          <div className="mb-6 border border-red-500/30 bg-red-500/5 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Timer className="w-4 h-4 text-red-400/60" />
+              <span className="text-[10px] tracking-[0.2em] font-bold text-red-400/60">CONTEST ENDED</span>
+            </div>
+            <button
+              onClick={() => navigate('/competition')}
+              className="px-4 py-1.5 border border-red-400/30 text-red-400/70 text-[10px] font-bold tracking-[0.15em] hover:border-red-400 hover:text-red-400 transition"
+            >
+              RETURN TO LOBBY
+            </button>
+          </div>
+        ) : contestEndMs ? (
+          <div className="mb-6 border border-green-500/20 bg-green-500/5 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Timer className="w-3.5 h-3.5 text-green-400" />
+              <span className="text-[9px] tracking-[0.25em] font-bold text-green-400/70">CONTEST TIME REMAINING</span>
+            </div>
+            <div className="text-2xl font-black font-mono tabular-nums tracking-wider text-green-400" style={{ textShadow: '0 0 20px rgba(34,197,94,0.3)' }}>
+              {formatCountdown(Math.max(0, contestEndMs - Date.now()))}
+            </div>
+          </div>
+        ) : null}
 
         {/* Level Boxes */}
         <div className="flex flex-col gap-5">
