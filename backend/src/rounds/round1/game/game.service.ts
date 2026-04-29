@@ -165,9 +165,11 @@ export class GameService {
 
     // Live-update team's maxLevelReached so leaderboard reflects progress during active play
     if (isVerified && updatedSession && updatedSession.maxLevelReached > session.maxLevelReached) {
+      const maxLevel = roundConfig?.maxLevel || 10;
+      const capped = Math.min(updatedSession.maxLevelReached, maxLevel);
       await this.teamModel.updateOne(
         { teamName: session.teamName },
-        { $max: { [`roundStats.${session.roundKey}.maxLevelReached`]: updatedSession.maxLevelReached } }
+        { $max: { [`roundStats.${session.roundKey}.maxLevelReached`]: capped } }
       );
     }
 
@@ -197,10 +199,13 @@ export class GameService {
       session.completedAt = new Date();
       session.isFinalized = true;
 
-      // Update max level reached one final time
-      if (session.currentLevel > session.maxLevelReached) {
-        session.maxLevelReached = session.currentLevel;
-      }
+      // Cap maxLevelReached to round max level
+      const roundConfig = await this.getRoundConfig(session.roundKey);
+      const maxLevel = roundConfig?.maxLevel || 10;
+      session.maxLevelReached = Math.min(
+        Math.max(session.currentLevel, session.maxLevelReached),
+        maxLevel,
+      );
 
       await session.save();
     }
@@ -302,12 +307,14 @@ export class GameService {
         };
       })
       .sort((a, b) => {
-        if (b.maxLevelReached !== a.maxLevelReached) {
-          return b.maxLevelReached - a.maxLevelReached;
+        if (roundKey === 'round2') {
+          // Round 2: sort by total points descending, then time ascending
+          if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+        } else {
+          // Round 1: sort by highest level descending
+          if (b.maxLevelReached !== a.maxLevelReached) return b.maxLevelReached - a.maxLevelReached;
         }
-        if (b.totalPoints !== a.totalPoints) {
-          return b.totalPoints - a.totalPoints;
-        }
+        // Tiebreak: who reached it first (earlier timestamp wins)
         const aTime = a.lastUpdated ? new Date(a.lastUpdated).getTime() : Infinity;
         const bTime = b.lastUpdated ? new Date(b.lastUpdated).getTime() : Infinity;
         return aTime - bTime;

@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { Team, TeamDocument } from '../../schemas/team.schema';
 import { GameSession, GameSessionDocument } from '../../schemas/game-session.schema';
 
-const POINTS_PER_LEVEL = 100;
+const POINTS_PER_LEVEL = 10;
 
 @Injectable()
 export class Round2Service {
@@ -36,6 +36,7 @@ export class Round2Service {
 
     // Update session
     session.maxLevelReached = Math.max(session.maxLevelReached, level);
+    session.maxLevelReached = Math.min(session.maxLevelReached, 3); // cap at 3 levels
     session.currentLevel = level + 1;
     session.totalPoints += points;
 

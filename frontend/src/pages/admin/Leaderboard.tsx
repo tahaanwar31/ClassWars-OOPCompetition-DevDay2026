@@ -251,8 +251,7 @@ export default function Leaderboard() {
         <div className="flex items-center gap-4 px-4 pb-2 border-b border-white/[0.06]">
           <div className="w-10 shrink-0" />
           <div className="flex-1 text-sm tracking-[0.15em] text-white font-bold">TEAMS</div>
-          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#39ff14] font-bold">MAX LEVEL</div>
-          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-white font-bold">POINTS</div>
+          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#39ff14] font-bold">LEVEL</div>
         </div>
       )}
 
@@ -272,7 +271,7 @@ export default function Leaderboard() {
           <div className="w-10 shrink-0" />
           <div className="flex-1 text-sm tracking-[0.15em] text-white font-bold">TEAMS</div>
           <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#39ff14] font-bold">R1 LEVEL</div>
-          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-white font-bold">R1 POINTS</div>
+          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#ff6600] font-bold">R2 POINTS</div>
         </div>
       )}
 
@@ -300,11 +299,9 @@ export default function Leaderboard() {
                 : view === 'round1'
                   ? entry.maxLevelReached || 0
                   : entry.round1?.maxLevelReached || entry.maxLevelReached || 0;
-              const points = view === 'round2'
+              const r2Points = view === 'round2'
                 ? Math.min(entry.maxLevelReached || 0, R2_MAX_LEVELS) * R2_POINTS_PER_LEVEL
-                : view === 'round1'
-                  ? entry.totalPoints || 0
-                  : entry.round1?.totalPoints || entry.totalPoints || 0;
+                : entry.round2DisplayPoints || 0;
               const maxLevel = view === 'round2' ? R2_MAX_LEVELS : R1_MAX_LEVEL;
               const accentColor = view === 'round2' ? '#ff6600' : '#39ff14';
               const accentRgb = view === 'round2' ? '255,102,0' : '57,255,20';
@@ -346,22 +343,52 @@ export default function Leaderboard() {
                     )}
                   </div>
 
-                  {/* Level badge */}
-                  <div className="w-28 shrink-0 text-center">
-                    <span
-                      className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
-                      style={{ color: accentColor, background: `rgba(${accentRgb},0.08)`, border: `1px solid rgba(${accentRgb},0.15)` }}
-                    >
-                      {view === 'round2' ? `${level}/${maxLevel}` : level}
-                    </span>
-                  </div>
-
-                  {/* Points badge */}
-                  <div className="w-28 shrink-0 text-center">
-                    <span className="text-sm font-black text-white/70 tabular-nums">
-                      {points}
-                    </span>
-                  </div>
+                  {/* Level / Points badges */}
+                  {view === 'round1' && (
+                    <div className="w-28 shrink-0 text-center">
+                      <span
+                        className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
+                        style={{ color: accentColor, background: `rgba(${accentRgb},0.08)`, border: `1px solid rgba(${accentRgb},0.15)` }}
+                      >
+                        {level}/{maxLevel}
+                      </span>
+                    </div>
+                  )}
+                  {view === 'round2' && (
+                    <>
+                      <div className="w-28 shrink-0 text-center">
+                        <span className="text-xs text-white/40 tabular-nums">{level}/{maxLevel} levels</span>
+                      </div>
+                      <div className="w-28 shrink-0 text-center">
+                        <span
+                          className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
+                          style={{ color: accentColor, background: `rgba(${accentRgb},0.08)`, border: `1px solid rgba(${accentRgb},0.15)` }}
+                        >
+                          {r2Points} pts
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {view === 'combined' && (
+                    <>
+                      <div className="w-28 shrink-0 text-center">
+                        <span
+                          className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
+                          style={{ color: '#39ff14', background: 'rgba(57,255,20,0.08)', border: '1px solid rgba(57,255,20,0.15)' }}
+                        >
+                          L{level}
+                        </span>
+                      </div>
+                      <div className="w-28 shrink-0 text-center">
+                        <span
+                          className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
+                          style={{ color: '#ff6600', background: 'rgba(255,102,0,0.08)', border: '1px solid rgba(255,102,0,0.15)' }}
+                        >
+                          {r2Points} pts
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               );
             })
