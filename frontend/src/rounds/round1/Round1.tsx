@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Question } from '../../data/questions';
 import { Terminal, ShieldAlert, Crosshair, Clock, AlertTriangle, Power, Cpu, Database, Target, Zap, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -918,6 +919,7 @@ const LevelBadge = ({ level }: { level: number }) => (
 );
 
 export default function Round1() {
+  const navigate = useNavigate();
   const [hasStarted, setHasStarted] = useState(() => {
     try {
       return sessionStorage.getItem('hasSeenBriefing_v2') === 'true';
@@ -1425,7 +1427,7 @@ export default function Round1() {
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={() => { window.location.href = '/competition'; }}
+              onClick={() => { navigate('/competition'); }}
               className="px-8 py-3.5 bg-black/60 border border-blue-500/40 text-blue-400 hover:border-blue-400 hover:bg-blue-500 hover:text-black transition-all duration-150 uppercase tracking-[0.2em] font-black text-sm relative overflow-hidden group"
             >
               <span className="absolute inset-0 bg-blue-500 -translate-x-full group-hover:translate-x-0 transition-transform duration-150 ease-out" />

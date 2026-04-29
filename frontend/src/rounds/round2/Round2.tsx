@@ -27,10 +27,8 @@ const CLIENT_ID = import.meta.env.VITE_JDOODLE_CLIENT_ID as string;
 const CLIENT_SECRET = import.meta.env.VITE_JDOODLE_CLIENT_SECRET as string;
 const CELL = 40;
 
-// Use backend compile endpoint in production, JDoodle directly in dev
-const COMPILE_URL = import.meta.env.DEV
-  ? `https://corsproxy.io/?https://api.jdoodle.com/v1/execute`
-  : '/compile';
+// Always use backend compile endpoint
+const COMPILE_URL = '/compile';
 
 interface Checkpoint {
   x: number;
