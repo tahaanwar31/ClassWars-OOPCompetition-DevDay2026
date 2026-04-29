@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Target, Clock, AlertCircle, X, Timer, Calendar } from 'lucide-react';
+import { Save, Target, Clock, AlertCircle, X, Timer, Calendar, Settings } from 'lucide-react';
 import api from '../../api/axios';
 
 interface RoundConfig {
@@ -42,34 +42,10 @@ function getContestStatus(round: RoundConfig): { label: string; color: string; b
   const now = Date.now();
   const start = round.playWindowStart ? new Date(round.playWindowStart).getTime() : null;
   const end = round.playWindowEnd ? new Date(round.playWindowEnd).getTime() : null;
-
   if (!start && !end) return { label: 'NO WINDOW SET', color: '#94a3b8', bg: 'rgba(148,163,184,0.08)' };
   if (start && now < start) return { label: 'UPCOMING', color: '#facc15', bg: 'rgba(250,204,21,0.08)' };
   if (end && now > end) return { label: 'ENDED', color: '#ef4444', bg: 'rgba(239,68,68,0.08)' };
   return { label: 'RUNNING', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' };
-}
-
-function roundToNearest5Min(date: Date): Date {
-  const d = new Date(date);
-  d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
-  return d;
-}
-
-function toLocalISO(date: Date): string {
-  const y = date.getFullYear();
-  const mo = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  const h = String(date.getHours()).padStart(2, '0');
-  const mi = String(date.getMinutes()).padStart(2, '0');
-  return `${y}-${mo}-${d}T${h}:${mi}`;
-}
-
-function formatTime12(date: Date): string {
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-
-function formatDateShort(date: Date): string {
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 const toDT = (val: string | null) => {
@@ -78,9 +54,8 @@ const toDT = (val: string | null) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-const inputCls = 'w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-sm text-white/80 text-sm focus:outline-none focus:border-[#39ff14]/30';
-const labelCls = 'block text-[11px] tracking-[0.1em] text-white/40 uppercase mb-1.5';
-const sectionTitleCls = 'text-xs font-bold tracking-[0.15em] text-white/50 border-b border-white/[0.06] pb-2 mb-4';
+const inputCls = 'w-full px-3 py-2 bg-white/[0.03] border border-white/[0.08] text-white/70 text-sm outline-none focus:border-[#39ff14]/25 transition-colors';
+const labelCls = 'block text-[9px] tracking-[0.25em] text-white/20 mb-1.5';
 
 function ContestWindowPicker({
   round,
@@ -97,14 +72,9 @@ function ContestWindowPicker({
   countdownMs: number;
   onUpdate: (updates: Partial<RoundConfig>) => void;
 }) {
-  const startDate = round.playWindowStart ? new Date(round.playWindowStart) : null;
-  const endDate = round.playWindowEnd ? new Date(round.playWindowEnd) : null;
-
-  // Draft state — only applied on "Set" click
   const [draftOpen, setDraftOpen] = useState<string>(toDT(round.playWindowStart));
   const [draftClose, setDraftClose] = useState<string>(toDT(round.playWindowEnd));
 
-  // Sync draft when parent data changes (e.g. after save + refetch)
   useEffect(() => {
     setDraftOpen(toDT(round.playWindowStart));
     setDraftClose(toDT(round.playWindowEnd));
@@ -113,106 +83,67 @@ function ContestWindowPicker({
   const handleSet = () => {
     const openIso = draftOpen ? new Date(draftOpen).toISOString() : null;
     const closeIso = draftClose ? new Date(draftClose).toISOString() : null;
-    onUpdate({
-      playWindowStart: openIso,
-      playWindowEnd: closeIso,
-      startTime: openIso,
-      endTime: closeIso,
-    });
+    onUpdate({ playWindowStart: openIso, playWindowEnd: closeIso, startTime: openIso, endTime: closeIso });
   };
 
   const hasChanges = draftOpen !== toDT(round.playWindowStart) || draftClose !== toDT(round.playWindowEnd);
 
   return (
-    <div className="mx-5 mt-5 border border-white/[0.08] bg-white/[0.02] p-5">
-      {/* Header */}
+    <div className="mx-5 mt-5 border border-white/[0.06] bg-white/[0.015] p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-white/25" />
-          <h3 className="text-[10px] font-bold tracking-[0.2em] text-white/40">CONTEST WINDOW</h3>
+          <Calendar className="w-3.5 h-3.5 text-white/15" />
+          <span className="text-[9px] font-bold tracking-[0.25em] text-white/25">CONTEST WINDOW</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="px-2.5 py-0.5 text-[9px] font-bold tracking-[0.15em] rounded-full"
+          <span className="px-2.5 py-0.5 text-[9px] font-bold tracking-[0.15em]"
             style={{ color: contestStatus.color, background: contestStatus.bg, border: `1px solid ${contestStatus.color}25` }}>
             {contestStatus.label}
           </span>
-          <span className="text-[9px] text-white/15 tracking-wider">
+          <span className="text-[8px] text-white/12 tracking-wider">
             {Intl.DateTimeFormat().resolvedOptions().timeZone}
           </span>
         </div>
       </div>
 
-      {/* Date/Time Pickers */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
           <label className={labelCls}>OPENS</label>
-          <input
-            type="datetime-local"
-            value={draftOpen}
-            onChange={(e) => setDraftOpen(e.target.value)}
-            className={inputCls}
-            step={300}
-          />
-          {draftOpen && (
-            <div className="text-[10px] text-white/25 mt-1.5">
-              {formatDateShort(new Date(draftOpen))} at {formatTime12(new Date(draftOpen))}
-            </div>
-          )}
+          <input type="datetime-local" value={draftOpen} onChange={(e) => setDraftOpen(e.target.value)} className={inputCls} step={300} />
         </div>
         <div>
           <label className={labelCls}>CLOSES</label>
-          <input
-            type="datetime-local"
-            value={draftClose}
-            onChange={(e) => setDraftClose(e.target.value)}
-            className={inputCls}
-            step={300}
-          />
-          {draftClose && (
-            <div className="text-[10px] text-white/25 mt-1.5">
-              {formatDateShort(new Date(draftClose))} at {formatTime12(new Date(draftClose))}
-            </div>
-          )}
+          <input type="datetime-local" value={draftClose} onChange={(e) => setDraftClose(e.target.value)} className={inputCls} step={300} />
         </div>
       </div>
 
-      {/* Action row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleSet}
-            disabled={!hasChanges}
-            className={`flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold tracking-[0.1em] border transition ${
+          <button onClick={handleSet} disabled={!hasChanges}
+            className={`flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold tracking-[0.15em] border transition ${
               hasChanges
-                ? 'border-[#39ff14]/40 bg-[#39ff14]/10 text-[#39ff14] hover:bg-[#39ff14]/20'
-                : 'border-white/[0.06] text-white/15 cursor-not-allowed'
-            }`}
-          >
+                ? 'border-[#39ff14]/30 bg-[#39ff14]/[0.06] text-[#39ff14] hover:bg-[#39ff14]/10'
+                : 'border-white/[0.06] text-white/12 cursor-not-allowed'
+            }`}>
             SET
           </button>
           {(round.playWindowStart || round.playWindowEnd) && (
-            <button
-              onClick={() => {
-                setDraftOpen('');
-                setDraftClose('');
-                onUpdate({ playWindowStart: null, playWindowEnd: null, startTime: null, endTime: null });
-              }}
-              className="flex items-center gap-1 text-white/15 hover:text-red-400/60 transition text-[10px] tracking-wider"
-            >
+            <button onClick={() => { setDraftOpen(''); setDraftClose(''); onUpdate({ playWindowStart: null, playWindowEnd: null, startTime: null, endTime: null }); }}
+              className="flex items-center gap-1 text-white/12 hover:text-red-400/50 transition text-[10px] tracking-wider">
               <X className="w-3 h-3" />Clear
             </button>
           )}
         </div>
-        <div className="flex items-center gap-4 text-[10px] text-white/25">
+        <div className="flex items-center gap-4 text-[10px] text-white/20">
           {durationSec !== null && durationSec > 0 && (
             <span className="flex items-center gap-1"><Timer className="w-3 h-3" />{formatDuration(durationSec)}</span>
           )}
           {countdownLabel && countdownMs > 0 && (
-            <span className="flex items-center gap-1 text-white/60 font-mono font-bold">
-              <Clock className="w-3 h-3 text-green-400/60" />{countdownLabel}: {formatCountdown(countdownMs)}
+            <span className="flex items-center gap-1 text-white/50 font-bold font-mono">
+              <Clock className="w-3 h-3 text-green-400/50" />{countdownLabel}: {formatCountdown(countdownMs)}
             </span>
           )}
-          {countdownLabel === 'Ended' && <span className="text-red-400/60">Contest ended</span>}
+          {countdownLabel === 'Ended' && <span className="text-red-400/50">Contest ended</span>}
         </div>
       </div>
     </div>
@@ -304,18 +235,22 @@ export default function GameConfig() {
   const addGeneralRule = () => setGeneralRules([...generalRules, '']);
   const removeGeneralRule = (index: number) => setGeneralRules(generalRules.filter((_, i) => i !== index));
 
-  if (loading) return <div className="text-white/20 text-sm tracking-[0.1em] text-center py-12 animate-pulse">LOADING...</div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><div className="text-[#39ff14]/30 text-xs tracking-[0.4em] animate-pulse">LOADING CONFIG</div></div>;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold tracking-[0.15em] text-white/80">CONFIGURATION</h1>
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Settings className="w-5 h-5 text-[#39ff14]/40" />
+        <h1 className="text-2xl font-black tracking-[0.2em] text-white/80">CONFIGURATION</h1>
+      </div>
 
       {/* General Rules */}
-      <div className="border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="border border-white/[0.06] bg-[#08080a] p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-bold tracking-[0.15em] text-white/50">GENERAL RULES</h2>
+          <span className="text-[10px] font-bold tracking-[0.25em] text-white/25">GENERAL RULES</span>
           <button onClick={handleSaveGeneralRules} disabled={savingGeneral}
-            className="flex items-center gap-2 px-4 py-1.5 bg-[#39ff14]/10 border border-[#39ff14]/30 text-[#39ff14] text-[10px] font-bold tracking-[0.1em] hover:bg-[#39ff14]/20 transition disabled:opacity-40">
+            className="flex items-center gap-2 px-4 py-1.5 border border-[#39ff14]/25 bg-[#39ff14]/[0.06] text-[#39ff14] text-[10px] font-bold tracking-[0.1em] hover:bg-[#39ff14]/10 transition disabled:opacity-30">
             <Save className="w-3.5 h-3.5" />
             {savingGeneral ? 'SAVING...' : 'SAVE'}
           </button>
@@ -326,11 +261,11 @@ export default function GameConfig() {
               <input type="text" value={rule} onChange={(e) => updateGeneralRule(index, e.target.value)}
                 placeholder="Enter rule..." className={`${inputCls} flex-1`} />
               <button onClick={() => removeGeneralRule(index)}
-                className="px-3 py-2 text-red-400/50 hover:text-red-400 text-[10px] tracking-wider border border-red-400/20 hover:border-red-400/40 transition">REMOVE</button>
+                className="px-3 py-2 text-red-400/40 hover:text-red-400 text-[9px] tracking-wider border border-red-400/15 hover:border-red-400/30 transition">REMOVE</button>
             </div>
           ))}
           <button onClick={addGeneralRule}
-            className="px-4 py-2 text-white/30 hover:text-white/50 text-[10px] tracking-[0.1em] border border-white/[0.06] hover:border-white/[0.12] transition">
+            className="px-4 py-2 text-white/20 hover:text-white/40 text-[10px] tracking-[0.15em] border border-white/[0.06] hover:border-white/[0.12] transition">
             + ADD RULE
           </button>
         </div>
@@ -343,6 +278,8 @@ export default function GameConfig() {
           const startMs = round.playWindowStart ? new Date(round.playWindowStart).getTime() : null;
           const endMs = round.playWindowEnd ? new Date(round.playWindowEnd).getTime() : null;
           const durationSec = (startMs && endMs) ? Math.round((endMs - startMs) / 1000) : null;
+          const accent = round.roundKey === 'round2' ? '#ff6600' : '#39ff14';
+          const accentRgb = round.roundKey === 'round2' ? '255,102,0' : '57,255,20';
 
           let countdownLabel = '';
           let countdownMs = 0;
@@ -351,24 +288,24 @@ export default function GameConfig() {
           else if (endMs && now > endMs) { countdownLabel = 'Ended'; }
 
           return (
-            <div key={round.roundKey} className="border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+            <div key={round.roundKey} className="border border-white/[0.06] bg-[#08080a] overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
                 <div className="flex items-center gap-3">
-                  <Target className="w-5 h-5 text-white/30" />
+                  <Target className="w-5 h-5" style={{ color: `${accent}80` }} />
                   <div>
-                    <h2 className="text-sm font-bold tracking-[0.12em] text-white/80">{round.roundName.toUpperCase()}</h2>
-                    <p className="text-[10px] text-white/20 tracking-wider">{round.roundKey}</p>
+                    <h2 className="text-sm font-black tracking-[0.15em]" style={{ color: accent }}>{round.roundName.toUpperCase()}</h2>
+                    <p className="text-[9px] text-white/15 tracking-wider">{round.roundKey}</p>
                   </div>
                 </div>
                 <button onClick={() => handleSaveRound(round.roundKey)} disabled={saving === round.roundKey}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-[#39ff14]/10 border border-[#39ff14]/30 text-[#39ff14] text-[10px] font-bold tracking-[0.1em] hover:bg-[#39ff14]/20 transition disabled:opacity-40">
+                  className="flex items-center gap-2 px-4 py-1.5 border text-[10px] font-bold tracking-[0.1em] transition disabled:opacity-30"
+                  style={{ borderColor: `${accentRgb}40`, background: `rgba(${accentRgb},0.06)`, color: accent }}>
                   <Save className="w-3.5 h-3.5" />
                   {saving === round.roundKey ? 'SAVING...' : 'SAVE'}
                 </button>
               </div>
 
-              {/* Contest Window */}
               <ContestWindowPicker
                 round={round}
                 contestStatus={contestStatus}
@@ -378,12 +315,10 @@ export default function GameConfig() {
                 onUpdate={(updates) => updateRound(round.roundKey, updates)}
               />
 
-              {/* Settings Grid */}
               <div className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Status */}
                   <div className="space-y-3">
-                    <h3 className={sectionTitleCls}>STATUS</h3>
+                    <h3 className="text-[10px] font-bold tracking-[0.25em] text-white/25 border-b border-white/[0.06] pb-2 mb-4">STATUS</h3>
                     <div className="flex items-center gap-5">
                       {[
                         { checked: round.enabled, onChange: (v: boolean) => updateRound(round.roundKey, { enabled: v }), label: 'Enabled' },
@@ -393,12 +328,12 @@ export default function GameConfig() {
                         <label key={i} className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox" checked={cb.checked} onChange={(e) => cb.onChange(e.target.checked)}
                             className="w-3.5 h-3.5 accent-[#39ff14]" />
-                          <span className="text-[11px] text-white/40 tracking-wide">{cb.label}</span>
+                          <span className="text-[10px] text-white/30 tracking-wide">{cb.label}</span>
                         </label>
                       ))}
                     </div>
                     <div>
-                      <label className={labelCls}>Round Status</label>
+                      <label className={labelCls}>ROUND STATUS</label>
                       <select value={round.status} onChange={(e) => updateRound(round.roundKey, { status: e.target.value })} className={inputCls}>
                         <option value="active">Active</option>
                         <option value="scheduled">Scheduled</option>
@@ -408,9 +343,8 @@ export default function GameConfig() {
                     </div>
                   </div>
 
-                  {/* Gameplay */}
                   <div className="space-y-3">
-                    <h3 className={sectionTitleCls}>GAMEPLAY</h3>
+                    <h3 className="text-[10px] font-bold tracking-[0.25em] text-white/25 border-b border-white/[0.06] pb-2 mb-4">GAMEPLAY</h3>
                     {[
                       { label: 'Game Time (seconds)', value: round.totalGameTimeSeconds, key: 'totalGameTimeSeconds' as const, hint: `${Math.floor(round.totalGameTimeSeconds / 60)} min` },
                       { label: 'Question Timeout (seconds)', value: round.questionTimeoutSeconds, key: 'questionTimeoutSeconds' as const },
@@ -423,35 +357,34 @@ export default function GameConfig() {
                         <input type="number" value={field.value}
                           onChange={(e) => updateRound(round.roundKey, { [field.key]: parseInt(e.target.value) || 0 })}
                           className={inputCls} />
-                        {field.hint && <p className="text-[10px] text-white/15 mt-1">{field.hint}</p>}
+                        {field.hint && <p className="text-[9px] text-white/10 mt-1">{field.hint}</p>}
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Rules */}
                 <div className="mt-5">
-                  <h3 className={sectionTitleCls}>RULES</h3>
+                  <h3 className="text-[10px] font-bold tracking-[0.25em] text-white/25 border-b border-white/[0.06] pb-2 mb-4">RULES</h3>
                   <div className="space-y-2">
                     {round.rules.map((rule, index) => (
                       <div key={index} className="flex gap-2">
                         <input type="text" value={rule} onChange={(e) => updateRoundRule(round.roundKey, index, e.target.value)}
                           placeholder="Enter rule..." className={`${inputCls} flex-1`} />
                         <button onClick={() => removeRoundRule(round.roundKey, index)}
-                          className="px-3 py-2 text-red-400/40 hover:text-red-400 text-[10px] border border-red-400/15 hover:border-red-400/30 transition">REMOVE</button>
+                          className="px-3 py-2 text-red-400/30 hover:text-red-400 text-[9px] border border-red-400/12 hover:border-red-400/25 transition">REMOVE</button>
                       </div>
                     ))}
                     <button onClick={() => addRoundRule(round.roundKey)}
-                      className="px-4 py-2 text-white/25 hover:text-white/50 text-[10px] tracking-wider border border-white/[0.06] hover:border-white/[0.12] transition">
+                      className="px-4 py-2 text-white/20 hover:text-white/40 text-[10px] tracking-wider border border-white/[0.06] hover:border-white/[0.12] transition">
                       + ADD RULE
                     </button>
                   </div>
                 </div>
 
                 {round.underConstruction && (
-                  <div className="mt-4 border border-yellow-500/20 bg-yellow-500/5 p-3 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-yellow-500/50 shrink-0 mt-0.5" />
-                    <span className="text-[11px] text-yellow-400/60">Under construction — not accessible to teams even if enabled.</span>
+                  <div className="mt-4 border border-yellow-500/15 bg-yellow-500/[0.04] p-3 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-yellow-500/40 shrink-0 mt-0.5" />
+                    <span className="text-[10px] text-yellow-400/50">Under construction — not accessible to teams even if enabled.</span>
                   </div>
                 )}
               </div>

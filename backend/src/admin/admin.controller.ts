@@ -98,6 +98,12 @@ export class AdminController {
     return this.adminService.getLeaderboard(roundKey || 'round1');
   }
 
+  // Leaderboard Reset
+  @Post('reset-leaderboard')
+  async resetLeaderboard() {
+    return this.adminService.resetLeaderboard();
+  }
+
   // Round Config Management
   @Get('config/rounds')
   async getAllRoundConfigs() {

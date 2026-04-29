@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Terminal } from 'lucide-react';
 import api from '../../api/axios';
 
 export default function Sessions() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSessions();
-  }, []);
+  useEffect(() => { fetchSessions(); }, []);
 
   const fetchSessions = async () => {
     try {
@@ -22,8 +20,7 @@ export default function Sessions() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this session?')) return;
-
+    if (!confirm('Delete this session?')) return;
     try {
       await api.delete(`/admin/sessions/${id}`);
       fetchSessions();
@@ -37,16 +34,12 @@ export default function Sessions() {
     return new Date(date).toLocaleString();
   };
 
-  const getStatusClasses = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'bg-[#39ff14]/10 text-[#39ff14]/70';
-      case 'completed':
-        return 'bg-white/[0.06] text-white/40';
-      case 'timeout':
-        return 'bg-red-500/10 text-red-400/60';
-      default:
-        return 'bg-white/[0.06] text-white/40';
+      case 'active': return { color: '#39ff14', bg: 'rgba(57,255,20,0.06)', border: 'rgba(57,255,20,0.15)' };
+      case 'completed': return { color: 'rgba(255,255,255,0.35)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)' };
+      case 'timeout': return { color: '#ef4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.15)' };
+      default: return { color: 'rgba(255,255,255,0.25)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.06)' };
     }
   };
 
@@ -59,79 +52,67 @@ export default function Sessions() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12 font-mono text-white/20 text-sm tracking-[0.1em]">
-        LOADING...
+      <div className="flex items-center justify-center py-20">
+        <div className="text-[#39ff14]/30 text-xs tracking-[0.4em] animate-pulse">LOADING SESSIONS</div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-5">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-xl font-mono font-bold text-white/80 tracking-[0.1em]">
-          SESSIONS
-        </h1>
+      <div className="flex items-center gap-3">
+        <Terminal className="w-5 h-5 text-[#39ff14]/40" />
+        <h1 className="text-2xl font-black tracking-[0.2em] text-white/80">SESSIONS</h1>
       </div>
 
       {/* Table */}
-      <div className="bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+      <div className="border border-white/[0.06] bg-[#08080a] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr>
-                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Team</th>
-                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Round</th>
-                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Level</th>
-                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Points</th>
-                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Status</th>
-                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Created</th>
-                <th className="px-5 py-3 text-left font-mono text-[10px] tracking-[0.15em] text-white/25 uppercase">Actions</th>
+              <tr className="border-b border-white/[0.06]">
+                {['TEAM', 'ROUND', 'LEVEL', 'POINTS', 'STATUS', 'CREATED', 'ACTIONS'].map((h) => (
+                  <th key={h} className="px-5 py-3 text-left text-[9px] tracking-[0.25em] text-white/20 font-bold">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {sessions.map((session) => (
-                <tr key={session._id} className="border-b border-white/[0.04]">
-                  <td className="px-5 py-3.5 font-mono text-sm text-white/80 whitespace-nowrap">
-                    {session.teamName}
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <span className="inline-block px-2.5 py-0.5 bg-white/[0.06] text-white/40 font-mono text-[11px] tracking-[0.1em]">
-                      {getRoundLabel(session.roundKey)}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 font-mono text-sm text-white/60 whitespace-nowrap">
-                    {session.maxLevelReached ?? session.currentLevel ?? '--'}
-                  </td>
-                  <td className="px-5 py-3.5 font-mono text-sm text-white/60 whitespace-nowrap">
-                    {session.totalPoints}
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <span
-                      className={`inline-block px-2.5 py-0.5 font-mono text-[11px] tracking-[0.1em] ${getStatusClasses(session.status)}`}
-                    >
-                      {(session.status || 'UNKNOWN').toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 font-mono text-xs text-white/20 whitespace-nowrap">
-                    {formatDate(session.createdAt)}
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <button
-                      onClick={() => handleDelete(session._id)}
-                      className="text-red-400/40 hover:text-red-400 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {sessions.map((session) => {
+                const ss = getStatusStyle(session.status);
+                return (
+                  <tr key={session._id} className="border-b border-white/[0.03] hover:bg-white/[0.015] transition-colors">
+                    <td className="px-5 py-3.5 text-sm font-bold text-white/60 tracking-wide">{session.teamName}</td>
+                    <td className="px-5 py-3.5">
+                      <span className="text-[9px] font-bold tracking-[0.15em] px-2 py-0.5 border border-white/[0.08] text-white/30">
+                        {getRoundLabel(session.roundKey)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-white/40 tabular-nums">
+                      {session.maxLevelReached ?? session.currentLevel ?? '--'}
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-white/40 tabular-nums">{session.totalPoints}</td>
+                    <td className="px-5 py-3.5">
+                      <span
+                        className="text-[9px] font-bold tracking-[0.15em] px-2.5 py-0.5 border"
+                        style={{ color: ss.color, background: ss.bg, borderColor: ss.border }}
+                      >
+                        {(session.status || 'UNKNOWN').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-[11px] text-white/15">{formatDate(session.createdAt)}</td>
+                    <td className="px-5 py-3.5">
+                      <button onClick={() => handleDelete(session._id)}
+                        className="text-red-400/25 hover:text-red-400 transition-colors" title="Delete">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
               {sessions.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center font-mono text-sm text-white/20">
-                    No sessions found
-                  </td>
+                  <td colSpan={7} className="px-5 py-10 text-center text-[10px] tracking-[0.3em] text-white/12">NO SESSIONS FOUND</td>
                 </tr>
               )}
             </tbody>

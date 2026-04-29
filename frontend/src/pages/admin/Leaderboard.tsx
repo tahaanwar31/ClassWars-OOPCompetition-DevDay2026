@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Medal, Award, RefreshCw, Radio, Users, Wifi } from 'lucide-react';
+import { Trophy, Medal, Award, RefreshCw, Radio, Users, Wifi, Crown, Flame, Terminal } from 'lucide-react';
 import api from '../../api/axios';
 
 interface RoundStats {
@@ -37,6 +37,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [view, setView] = useState<'combined' | 'round1' | 'round2'>('round1');
+  const [resetting, setResetting] = useState(false);
   const prevRanks = useRef<Map<string, number>>(new Map());
 
   const fetchAll = useCallback(async () => {
@@ -62,6 +63,19 @@ export default function Leaderboard() {
     const interval = setInterval(fetchAll, 5000);
     return () => clearInterval(interval);
   }, [fetchAll]);
+
+  const handleReset = async () => {
+    if (!confirm('RESET ALL LEADERBOARD DATA?\n\nThis will clear all team scores and sessions. This cannot be undone.')) return;
+    setResetting(true);
+    try {
+      await api.post('/admin/reset-leaderboard');
+      await fetchAll();
+    } catch (e) {
+      console.error('Reset failed:', e);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   // Build combined entries
   const buildCombined = (): CombinedEntry[] => {
@@ -152,34 +166,9 @@ export default function Leaderboard() {
     return 'same';
   };
 
-  // Update prev ranks after render
   useEffect(() => {
     prevRanks.current = currentRanks;
   });
-
-  const getRankColor = (i: number) => {
-    if (i === 0) return { bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.3)', text: '#FFD700', glow: '0 0 30px rgba(255,215,0,0.15)' };
-    if (i === 1) return { bg: 'rgba(192,192,192,0.08)', border: 'rgba(192,192,192,0.25)', text: '#C0C0C0', glow: '0 0 20px rgba(192,192,192,0.1)' };
-    if (i === 2) return { bg: 'rgba(205,127,50,0.08)', border: 'rgba(205,127,50,0.25)', text: '#CD7F32', glow: '0 0 20px rgba(205,127,50,0.1)' };
-    return { bg: 'rgba(255,255,255,0.02)', border: 'rgba(255,255,255,0.06)', text: 'rgba(255,255,255,0.5)', glow: 'none' };
-  };
-
-  const RankIcon = ({ rank }: { rank: number }) => {
-    if (rank === 0) return <Trophy className="w-5 h-5 text-yellow-400" />;
-    if (rank === 1) return <Medal className="w-5 h-5 text-gray-400" />;
-    if (rank === 2) return <Award className="w-5 h-5 text-amber-600" />;
-    return <span className="text-sm font-black text-white/20 tabular-nums">{rank + 1}</span>;
-  };
-
-  const LiveDot = () => (
-    <span className="flex items-center gap-1.5">
-      <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-      </span>
-      <span className="text-[9px] font-bold tracking-[0.2em] text-green-400/80">LIVE</span>
-    </span>
-  );
 
   const formatTime = (date: Date | null) => {
     if (!date) return '--:--:--';
@@ -190,110 +179,163 @@ export default function Leaderboard() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="text-[#39ff14]/40 tracking-[0.3em] text-sm animate-pulse mb-2">SYNCING LEADERBOARD</div>
-          <div className="text-white/10 text-xs tracking-widest">Awaiting transmission...</div>
+          <Terminal className="w-6 h-6 text-[#39ff14]/20 mx-auto mb-3 animate-pulse" />
+          <div className="text-[#39ff14]/30 text-xs tracking-[0.4em] animate-pulse mb-1">SYNCING LEADERBOARD</div>
+          <div className="text-white/8 text-[10px] tracking-[0.2em]">Awaiting transmission...</div>
         </div>
       </div>
     );
   }
 
+  const accentColor = view === 'round2' ? '#ff6600' : '#39ff14';
+  const accentRgb = view === 'round2' ? '255,102,0' : '57,255,20';
+
   return (
     <div className="space-y-5">
 
       {/* HEADER */}
-      <div className="mb-6">
+      <div className="relative">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-black tracking-[0.15em] text-white">LEADERBOARD</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <Crown className="w-6 h-6" style={{ color: accentColor }} />
+              <h1 className="text-2xl font-black tracking-[0.2em] text-white/90">LEADERBOARD</h1>
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
               </span>
             </div>
-            <div className="flex items-center gap-4 text-[10px] tracking-[0.15em] text-white/25">
+            <div className="flex items-center gap-5 text-[9px] tracking-[0.2em] text-white/20">
               <span className="flex items-center gap-1.5"><Users className="w-3 h-3" />{summary.totalTeams} TEAMS</span>
-              <span className="flex items-center gap-1.5"><Wifi className="w-3 h-3 text-green-500/50" /><span className="text-green-400/50">{summary.activeTeams} ACTIVE</span></span>
-              <span>UPDATED {formatTime(lastUpdated)}</span>
+              <span className="flex items-center gap-1.5"><Wifi className="w-3 h-3 text-green-500/40" /><span className="text-green-400/40">{summary.activeTeams} LIVE</span></span>
+              <span className="flex items-center gap-1.5"><Radio className="w-3 h-3" />{formatTime(lastUpdated)}</span>
             </div>
           </div>
-          <button
-            onClick={fetchAll}
-            className="flex items-center gap-2 px-4 py-2 border border-white/10 text-white/30 hover:border-[#39ff14]/40 hover:text-[#39ff14] transition-all text-[10px] tracking-[0.2em]"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            REFRESH
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={fetchAll}
+              className="flex items-center gap-2 px-4 py-2 border border-white/[0.08] text-white/25 hover:border-[#39ff14]/30 hover:text-[#39ff14] transition-all text-[10px] font-bold tracking-[0.15em]"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              SYNC
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={resetting}
+              className="flex items-center gap-2 px-4 py-2 border border-red-500/20 text-red-400/40 hover:border-red-500/40 hover:text-red-400 transition-all text-[10px] font-bold tracking-[0.15em] disabled:opacity-30"
+            >
+              <Flame className="w-3.5 h-3.5" />
+              {resetting ? 'RESETTING...' : 'RESET ALL'}
+            </button>
+          </div>
         </div>
 
         {/* View Tabs */}
         <div className="flex gap-1 mt-5">
-          {(['round1', 'combined', 'round2'] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`px-5 py-2.5 text-[10px] font-bold tracking-[0.2em] border transition-all ${
-                view === v
-                  ? v === 'round2'
-                    ? 'border-[#ff6600] bg-[#ff6600]/10 text-[#ff6600]'
-                    : 'border-[#39ff14] bg-[#39ff14]/10 text-[#39ff14]'
-                  : 'border-white/6 text-white/20 hover:border-white/15 hover:text-white/40'
-              }`}
-            >
-              {v === 'combined' ? 'COMBINED' : v === 'round1' ? 'ROUND 1' : 'ROUND 2'}
-            </button>
-          ))}
+          {(['round1', 'combined', 'round2'] as const).map((v) => {
+            const vAccent = v === 'round2' ? '#ff6600' : '#39ff14';
+            const vAccentRgb = v === 'round2' ? '255,102,0' : '57,255,20';
+            return (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`relative px-5 py-2.5 text-[10px] font-black tracking-[0.2em] border transition-all ${
+                  view === v
+                    ? ''
+                    : 'border-white/[0.06] text-white/15 hover:border-white/[0.12] hover:text-white/30'
+                }`}
+                style={view === v ? {
+                  borderColor: `rgba(${vAccentRgb},0.3)`,
+                  background: `rgba(${vAccentRgb},0.06)`,
+                  color: vAccent,
+                  textShadow: `0 0 10px rgba(${vAccentRgb},0.2)`,
+                } : {}}
+              >
+                {v === 'combined' ? 'COMBINED' : v === 'round1' ? 'ROUND 1' : 'ROUND 2'}
+                {view === v && (
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: vAccent, boxShadow: `0 0 8px rgba(${vAccentRgb},0.4)` }} />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* COLUMN HEADERS (Round 1) */}
-      {view === 'round1' && data.length > 0 && (
+      {/* COLUMN HEADERS */}
+      {data.length > 0 && (
         <div className="flex items-center gap-4 px-4 pb-2 border-b border-white/[0.06]">
-          <div className="w-10 shrink-0" />
-          <div className="flex-1 text-sm tracking-[0.15em] text-white font-bold">TEAMS</div>
-          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#39ff14] font-bold">LEVEL</div>
+          <div className="w-12 shrink-0" />
+          <div className="flex-1 text-[10px] tracking-[0.25em] text-white/30 font-bold">TEAM</div>
+          {view === 'round1' && (
+            <div className="w-32 shrink-0 text-center text-[10px] tracking-[0.25em] text-[#39ff14]/50 font-bold">LEVEL</div>
+          )}
+          {view === 'round2' && (
+            <>
+              <div className="w-28 shrink-0 text-center text-[10px] tracking-[0.25em] text-[#ff6600]/50 font-bold">LEVELS</div>
+              <div className="w-28 shrink-0 text-center text-[10px] tracking-[0.25em] text-white/25 font-bold">POINTS</div>
+            </>
+          )}
+          {view === 'combined' && (
+            <>
+              <div className="w-28 shrink-0 text-center text-[10px] tracking-[0.25em] text-[#39ff14]/50 font-bold">R1 LVL</div>
+              <div className="w-28 shrink-0 text-center text-[10px] tracking-[0.25em] text-[#ff6600]/50 font-bold">R2 PTS</div>
+            </>
+          )}
         </div>
       )}
 
-      {/* COLUMN HEADERS (Round 2) */}
-      {view === 'round2' && data.length > 0 && (
-        <div className="flex items-center gap-4 px-4 pb-2 border-b border-white/[0.06]">
-          <div className="w-10 shrink-0" />
-          <div className="flex-1 text-sm tracking-[0.15em] text-white font-bold">TEAMS</div>
-          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#ff6600] font-bold">LEVELS</div>
-          <div className="w-28 shrink-0 text-center text-xs tracking-[0.2em] text-white/30 font-bold">POINTS</div>
-        </div>
-      )}
-
-      {/* COLUMN HEADERS (Combined) */}
-      {view === 'combined' && data.length > 0 && (
-        <div className="flex items-center gap-4 px-4 pb-2 border-b border-white/[0.06]">
-          <div className="w-10 shrink-0" />
-          <div className="flex-1 text-sm tracking-[0.15em] text-white font-bold">TEAMS</div>
-          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#39ff14] font-bold">R1 LEVEL</div>
-          <div className="w-28 shrink-0 text-center text-sm tracking-[0.15em] text-[#ff6600] font-bold">R2 POINTS</div>
-        </div>
-      )}
-
-      {/* LEADERBOARD ENTRIES */}
+      {/* ENTRIES */}
       <div className="space-y-1">
         <AnimatePresence mode="popLayout">
           {data.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="border border-white/5 bg-white/[0.02] p-12 text-center"
+              className="border border-white/[0.04] bg-[#08080a] p-12 text-center"
             >
-              <div className="text-white/15 text-sm tracking-widest">NO DATA YET</div>
-              <div className="text-white/8 text-xs tracking-wider mt-1">Waiting for teams to begin...</div>
+              <Terminal className="w-8 h-8 text-white/8 mx-auto mb-3" />
+              <div className="text-white/12 text-xs tracking-[0.3em]">NO DATA YET</div>
+              <div className="text-white/6 text-[10px] tracking-[0.15em] mt-1">Waiting for teams to begin...</div>
             </motion.div>
           ) : (
             data.map((entry: any, i: number) => {
-              const colors = getRankColor(i);
               const movement = getRankMovement(entry.teamName, i);
               const isActive = entry.isActive || false;
 
-              // Data extraction per view
+              // Rank visual
+              const getRankStyle = () => {
+                if (i === 0) return {
+                  text: '#FFD700',
+                  bg: 'rgba(255,215,0,0.04)',
+                  border: 'rgba(255,215,0,0.15)',
+                  glow: '0 0 20px rgba(255,215,0,0.05)',
+                  icon: <Crown className="w-5 h-5 text-yellow-400" />,
+                };
+                if (i === 1) return {
+                  text: '#C0C0C0',
+                  bg: 'rgba(192,192,192,0.03)',
+                  border: 'rgba(192,192,192,0.12)',
+                  glow: 'none',
+                  icon: <Medal className="w-5 h-5 text-gray-400" />,
+                };
+                if (i === 2) return {
+                  text: '#CD7F32',
+                  bg: 'rgba(205,127,50,0.03)',
+                  border: 'rgba(205,127,50,0.12)',
+                  glow: 'none',
+                  icon: <Award className="w-5 h-5 text-amber-600" />,
+                };
+                return {
+                  text: 'rgba(255,255,255,0.35)',
+                  bg: 'transparent',
+                  border: 'rgba(255,255,255,0.04)',
+                  glow: 'none',
+                  icon: <span className="text-[11px] font-black text-white/15 tabular-nums">{String(i + 1).padStart(2, '0')}</span>,
+                };
+              };
+              const rank = getRankStyle();
+
+              // Data extraction
               const level = view === 'round2'
                 ? entry.maxLevelReached || 0
                 : view === 'round1'
@@ -303,8 +345,6 @@ export default function Leaderboard() {
                 ? Math.min(entry.maxLevelReached || 0, R2_MAX_LEVELS) * R2_POINTS_PER_LEVEL
                 : entry.round2DisplayPoints || 0;
               const maxLevel = view === 'round2' ? R2_MAX_LEVELS : R1_MAX_LEVEL;
-              const accentColor = view === 'round2' ? '#ff6600' : '#39ff14';
-              const accentRgb = view === 'round2' ? '255,102,0' : '57,255,20';
 
               return (
                 <motion.div
@@ -313,42 +353,54 @@ export default function Leaderboard() {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.25, delay: i * 0.015 }}
-                  className="flex items-center gap-4 px-4 py-3 border rounded-sm transition-all hover:bg-white/[0.02]"
+                  transition={{ duration: 0.2, delay: i * 0.012 }}
+                  className="relative flex items-center gap-4 px-4 py-3 border transition-all hover:bg-white/[0.015]"
                   style={{
-                    background: colors.bg,
-                    borderColor: colors.border,
-                    boxShadow: colors.glow,
+                    background: rank.bg,
+                    borderColor: rank.border,
+                    boxShadow: rank.glow,
                   }}
                 >
                   {/* Rank */}
-                  <div className="w-10 shrink-0 flex justify-center">
-                    <RankIcon rank={i} />
+                  <div className="w-12 shrink-0 flex justify-center">
+                    {rank.icon}
                   </div>
 
-                  {/* Team name */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                  {/* Team */}
+                  <div className="flex-1 min-w-0 flex items-center gap-2.5">
                     <span
-                      className="text-base font-black tracking-[0.08em] truncate"
-                      style={{ color: i < 3 ? colors.text : 'rgba(255,255,255,0.6)' }}
+                      className="text-sm font-black tracking-[0.08em] truncate"
+                      style={{ color: i < 3 ? rank.text : 'rgba(255,255,255,0.5)' }}
                     >
                       {entry.teamName}
                     </span>
-                    {isActive && <LiveDot />}
+                    {isActive && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                        </span>
+                        <span className="text-[8px] font-bold tracking-[0.2em] text-green-400/60">LIVE</span>
+                      </span>
+                    )}
                     {movement === 'up' && prevRanks.current.size > 0 && (
-                      <span className="text-[10px] text-green-400/60">▲</span>
+                      <span className="text-[9px] text-green-400/50 font-bold">▲</span>
                     )}
                     {movement === 'down' && prevRanks.current.size > 0 && (
-                      <span className="text-[10px] text-red-400/40">▼</span>
+                      <span className="text-[9px] text-red-400/30 font-bold">▼</span>
                     )}
                   </div>
 
-                  {/* Level / Points badges */}
+                  {/* Badges */}
                   {view === 'round1' && (
-                    <div className="w-28 shrink-0 text-center">
+                    <div className="w-32 shrink-0 text-center">
                       <span
-                        className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
-                        style={{ color: accentColor, background: `rgba(${accentRgb},0.08)`, border: `1px solid rgba(${accentRgb},0.15)` }}
+                        className="text-[11px] font-black tabular-nums px-3 py-1"
+                        style={{
+                          color: '#39ff14',
+                          background: 'rgba(57,255,20,0.06)',
+                          border: '1px solid rgba(57,255,20,0.12)',
+                        }}
                       >
                         {level}/{maxLevel}
                       </span>
@@ -357,12 +409,16 @@ export default function Leaderboard() {
                   {view === 'round2' && (
                     <>
                       <div className="w-28 shrink-0 text-center">
-                        <span className="text-xs text-white/40 tabular-nums">{level}/{maxLevel} levels</span>
+                        <span className="text-[10px] text-white/30 tabular-nums">{level}/{maxLevel}</span>
                       </div>
                       <div className="w-28 shrink-0 text-center">
                         <span
-                          className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
-                          style={{ color: accentColor, background: `rgba(${accentRgb},0.08)`, border: `1px solid rgba(${accentRgb},0.15)` }}
+                          className="text-[11px] font-black tabular-nums px-3 py-1"
+                          style={{
+                            color: '#ff6600',
+                            background: 'rgba(255,102,0,0.06)',
+                            border: '1px solid rgba(255,102,0,0.12)',
+                          }}
                         >
                           {r2Points} pts
                         </span>
@@ -373,16 +429,24 @@ export default function Leaderboard() {
                     <>
                       <div className="w-28 shrink-0 text-center">
                         <span
-                          className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
-                          style={{ color: '#39ff14', background: 'rgba(57,255,20,0.08)', border: '1px solid rgba(57,255,20,0.15)' }}
+                          className="text-[11px] font-black tabular-nums px-2.5 py-1"
+                          style={{
+                            color: '#39ff14',
+                            background: 'rgba(57,255,20,0.06)',
+                            border: '1px solid rgba(57,255,20,0.12)',
+                          }}
                         >
                           L{level}
                         </span>
                       </div>
                       <div className="w-28 shrink-0 text-center">
                         <span
-                          className="text-sm font-black tabular-nums px-3 py-1 rounded-sm"
-                          style={{ color: '#ff6600', background: 'rgba(255,102,0,0.08)', border: '1px solid rgba(255,102,0,0.15)' }}
+                          className="text-[11px] font-black tabular-nums px-2.5 py-1"
+                          style={{
+                            color: '#ff6600',
+                            background: 'rgba(255,102,0,0.06)',
+                            border: '1px solid rgba(255,102,0,0.12)',
+                          }}
                         >
                           {r2Points} pts
                         </span>
@@ -396,6 +460,15 @@ export default function Leaderboard() {
         </AnimatePresence>
       </div>
 
+      {/* Footer info */}
+      <div className="border border-white/[0.04] bg-[#08080a] px-5 py-3 flex items-center justify-between">
+        <span className="text-[9px] tracking-[0.2em] text-white/15">
+          AUTO-REFRESH EVERY 5s
+        </span>
+        <span className="text-[9px] tracking-[0.2em] text-white/15">
+          {data.length} ENTRIES
+        </span>
+      </div>
     </div>
   );
 }

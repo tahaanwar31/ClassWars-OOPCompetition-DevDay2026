@@ -263,4 +263,31 @@ export class AdminService {
       { new: true }
     ).exec();
   }
+
+  async resetLeaderboard() {
+    // Delete all game sessions
+    const sessionsDeleted = await this.gameSessionModel.deleteMany({});
+
+    // Reset all team stats
+    const teamsUpdated = await this.teamModel.updateMany(
+      {},
+      {
+        $set: {
+          totalScore: 0,
+          gamesPlayed: 0,
+          bestScore: 0,
+          sessionIds: [],
+          roundStats: {
+            round1: { totalPoints: 0, bestPoints: 0, maxLevelReached: 0, sessionsPlayed: 0 },
+            round2: { totalPoints: 0, bestPoints: 0, maxLevelReached: 0, sessionsPlayed: 0 },
+          },
+        },
+      },
+    );
+
+    return {
+      sessionsDeleted: sessionsDeleted.deletedCount,
+      teamsReset: teamsUpdated.modifiedCount,
+    };
+  }
 }
