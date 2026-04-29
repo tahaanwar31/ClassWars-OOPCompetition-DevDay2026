@@ -23,8 +23,6 @@ const cppTheme = EditorView.theme({
   '.cm-cursor': { borderLeftColor: '#39ff14 !important', borderLeftWidth: '2px !important' },
 });
 
-const CLIENT_ID = import.meta.env.VITE_JDOODLE_CLIENT_ID as string;
-const CLIENT_SECRET = import.meta.env.VITE_JDOODLE_CLIENT_SECRET as string;
 const CELL = 40;
 
 // Always use backend compile endpoint
@@ -59,64 +57,45 @@ function makeEnemies(): Enemy[] {
 
 function buildStarterCode(enemies: Enemy[]): string {
   const targetsArr = enemies.map(e => `{${e.y}, ${e.x}}`).join(', ');
-  return `#include <iostream>
-using namespace std;
+  return `/*
+ * LEVEL 2: COMBAT PURGE
+ *
+ * GOAL: Destroy all 8 targets.
+ *
+ * HOW fire() WORKS:
+ *   fire(targetRow, targetCol) shoots at the target.
+ *   You must be on the SAME ROW, exactly 2 cells LEFT of the target.
+ *
+ * TIP: Hover over each target on the grid to see its (row, col).
+ *
+ * MOVEMENT:  r++ = down,  r-- = up,  c++ = right,  c-- = left
+ * OUTPUT:    cout << "STEP:" << r << "," << c << endl;
+ */
 
-// === BASE CLASS (provided) ===
 class Tank {
 public:
     virtual void move() = 0;
     virtual void attack() = 0;
     virtual void defend() = 0;
-
-    // Call this to fire at an enemy at (targetRow, targetCol)
-    void fire(int targetRow, int targetCol) {
-        cout << "FIRE:" << targetRow << "," << targetCol << endl;
-    }
 };
 
-// === YOUR CLASS ===
-// Destroy all 8 targets by moving to a lock position and firing.
 class MyTank : public Tank {
 private:
-    int r = 0, c = 0;          // current position
-    int currentTarget = 0;      // which target we're going after
-
-    // 8 enemy targets {row, col} - destroy ALL of them
-    //You will get coordinates of the targets once you hover above them
+    int r = 0, c = 0;
 
 public:
-    // TODO: Override move() to reach the firing position.
-    //
-    // FIRING RULE: You must be exactly 2 cells to the LEFT of the target.
-    //
-    // HOW TO MOVE:
-    //   - Move one cell at a time toward the lock position
-    //   - Print EACH step:  cout << "STEP:" << r << "," << c << endl;
-    //
     void move() override {
-        // Write your logic here
-
+        // TODO: Move to firing position for current target
     }
-
-    // TODO: Override attack() to fire at the current target.
-    //
-    // Call fire(targetRow, targetCol) to shoot.
-    // Then advance currentTarget to the next enemy.
-    //
     void attack() override {
-        // Write your logic here
-
+        // TODO: Fire at current target, advance to next
     }
     void defend() override {}
 };
 
 int main() {
     MyTank t;
-    for(int i = 0; i < 8; i++) {
-        t.move();
-        t.attack();
-    }
+    // TODO: Destroy all 8 targets
     return 0;
 }`;
 }
@@ -128,7 +107,6 @@ function makeInitialState() {
 
 const HIDDEN_HEADER = `#include <iostream>
 using namespace std;
-class Tank { public: virtual void move() = 0; virtual void attack() = 0; virtual void defend() = 0; };
 void fire(int tr, int tc) { cout << "FIRE:" << tr << "," << tc << endl; }
 `;
 
@@ -257,10 +235,7 @@ export default function Level2() {
       const res = await fetch(COMPILE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(import.meta.env.DEV
-          ? { clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, script: HIDDEN_HEADER + code, language: 'cpp17', versionIndex: '0' }
-          : { script: HIDDEN_HEADER + code }
-        ),
+        body: JSON.stringify({ script: HIDDEN_HEADER + code }),
       });
       const data = await res.json();
 

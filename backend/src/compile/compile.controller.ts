@@ -4,12 +4,10 @@ import axios from 'axios';
 
 @Controller('compile')
 export class CompileController {
-  private readonly clientId: string;
-  private readonly clientSecret: string;
+  private readonly rapidApiKey: string;
 
   constructor(private configService: ConfigService) {
-    this.clientId = this.configService.get<string>('JDOODLE_CLIENT_ID') || '';
-    this.clientSecret = this.configService.get<string>('JDOODLE_CLIENT_SECRET') || '';
+    this.rapidApiKey = this.configService.get<string>('ONECOMPILER_RAPIDAPI_KEY') || '';
   }
 
   @Post()
@@ -21,18 +19,43 @@ export class CompileController {
     }
 
     try {
-      const res = await axios.post('https://api.jdoodle.com/v1/execute', {
-        clientId: this.clientId,
-        clientSecret: this.clientSecret,
-        script,
-        language: 'cpp17',
-        versionIndex: '0',
-      }, { timeout: 30000 });
+      const res = await axios.post(
+        'https://onecompiler-apis.p.rapidapi.com/api/v1/run',
+        {
+          language: 'cpp',
+          files: [
+            {
+              name: 'main.cpp',
+              content: script,
+            },
+          ],
+          stdin: '',
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RapidAPI-Key': this.rapidApiKey,
+            'X-RapidAPI-Host': 'onecompiler-apis.p.rapidapi.com',
+          },
+          timeout: 30000,
+        },
+      );
 
-      return res.data;
+      // Map OneCompiler response to JDoodle-compatible format for frontend
+      const stdout = res.data.stdout || '';
+      const stderr = res.data.stderr || '';
+      const exitCode = res.data.exitCode;
+
+      // If stderr has content and no stdout, it's likely a compilation error
+      const output = stdout || stderr || '';
+
+      return {
+        output,
+        statusCode: exitCode ?? 0,
+      };
     } catch (err: any) {
       return {
-        output: `error: ${err.response?.data?.error || err.message}`,
+        output: `error: ${err.response?.data?.message || err.response?.data?.error || err.message}`,
         statusCode: err.response?.status || 500,
       };
     }

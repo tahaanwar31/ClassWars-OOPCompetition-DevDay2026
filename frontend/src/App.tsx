@@ -78,6 +78,7 @@ export default function App() {
           <Route path="/game" element={<Navigate to="/competition" replace />} />
           
           {/* Admin Routes */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="/admin/login" element={<Login />} />
           <Route
             path="/admin/*"

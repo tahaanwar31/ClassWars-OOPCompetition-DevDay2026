@@ -29,7 +29,7 @@ export default defineConfig(({mode}) => {
           target: 'http://localhost:3002',
           changeOrigin: true,
         },
-        '/admin': {
+        '^/admin/': {
           target: 'http://localhost:3002',
           changeOrigin: true,
         },
@@ -49,7 +49,7 @@ export default defineConfig(({mode}) => {
           target: 'http://localhost:3002',
           changeOrigin: true,
         },
-        '/competition': {
+        '/competition/rounds': {
           target: 'http://localhost:3002',
           changeOrigin: true,
         },

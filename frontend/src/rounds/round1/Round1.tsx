@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Question } from '../../data/questions';
-import { Terminal, ShieldAlert, Crosshair, Clock, AlertTriangle, Power, Cpu, Database, Target, Zap, Shield } from 'lucide-react';
+import { Terminal, ShieldAlert, Crosshair, Clock, ArrowLeft, Cpu, Database, Target, Zap, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalBackground from '../../components/TacticalBackground';
 import api from '../../api/axios';
@@ -952,7 +952,6 @@ export default function Round1() {
   
   const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
   const [gameOver, setGameOver] = useState(false);
-  const [showQuitModal, setShowQuitModal] = useState(false);
   const [questionsByLevel, setQuestionsByLevel] = useState<{ [key: number]: Question[] }>({});
   // Track the order questions were shown per level so we can replay oldest-first on demotion
   const [shownOrderByLevel, setShownOrderByLevel] = useState<{ [key: number]: number[] }>({});
@@ -1028,6 +1027,15 @@ export default function Round1() {
             const elapsed = Math.floor((Date.now() - new Date(session.questionStartedAt).getTime()) / 1000);
             restoredTimeLeft = Math.max(0, 60 - elapsed);
           }
+
+          // Check if timer was paused via back button (takes priority)
+          try {
+            const paused = JSON.parse(sessionStorage.getItem('round1_pause') || 'null');
+            if (paused && paused.sessionId === session._id && paused.questionId === session.currentQuestionId) {
+              restoredTimeLeft = paused.timeLeft;
+              sessionStorage.removeItem('round1_pause');
+            }
+          } catch (e) {}
         } catch (e) {
           console.error('Failed to restore current question:', e);
         }
@@ -1050,12 +1058,10 @@ export default function Round1() {
         initialTotalTimeRef.current = session.timeRemaining;
       }
 
-      if (restoredQuestion) {
+      if (restoredQuestion && restoredTimeLeft !== null && restoredTimeLeft > 0) {
         setCurrentQuestion(restoredQuestion);
         questionRestoredRef.current = true;
-        if (restoredTimeLeft !== null) {
-          setTimeLeft(restoredTimeLeft);
-        }
+        setTimeLeft(restoredTimeLeft);
       }
     } catch (error) {
       console.error('Failed to create session:', error);
@@ -1178,38 +1184,41 @@ export default function Round1() {
     }
   }, [sessionId, level]);
 
-  // Timer effect — contest-driven or fallback to totalTime
+  // Timer effect — uses wall-clock time so it stays accurate in background tabs
   useEffect(() => {
-    if (!hasStarted || gameOver || feedback || showQuitModal) return;
+    if (!hasStarted || gameOver || feedback) return;
+
+    let lastTick = Date.now();
 
     const timer = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - lastTick) / 1000);
+      if (elapsed <= 0) return;
+      lastTick = now;
+
       // Contest-driven timer
       if (contestEndMs) {
-        const remaining = Math.max(0, Math.floor((contestEndMs - Date.now()) / 1000));
+        const remaining = Math.max(0, Math.floor((contestEndMs - now) / 1000));
         setTotalTime(remaining);
         if (remaining <= 0 && !contestEndedRef.current) {
           contestEndedRef.current = true;
           setGameOver(true);
         }
       } else {
-        // Fallback: decrement totalTime
+        // Fallback: decrement totalTime by actual elapsed seconds
         setTotalTime(prev => {
-          if (prev <= 1) {
-            setGameOver(true);
-            return 0;
-          }
-          return prev - 1;
+          const newVal = Math.max(0, prev - elapsed);
+          if (newVal <= 0) setGameOver(true);
+          return newVal;
         });
       }
 
-      setTimeLeft(prev => {
-        if (prev <= 1) return 0; // Signal timeout — handled by separate effect below
-        return prev - 1;
-      });
+      // Per-question timer — decrement by actual elapsed seconds
+      setTimeLeft(prev => Math.max(0, prev - elapsed));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [hasStarted, gameOver, feedback, showQuitModal, level, contestEndMs]);
+  }, [hasStarted, gameOver, feedback, level, contestEndMs]);
 
   // Watch for timeLeft hitting 0 and trigger timeout (outside state updater — no side effects in updaters)
   const timeoutFiredRef = useRef(false);
@@ -1354,6 +1363,19 @@ export default function Round1() {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleBack = () => {
+    if (sessionId && currentQuestion) {
+      try {
+        sessionStorage.setItem('round1_pause', JSON.stringify({
+          sessionId,
+          timeLeft,
+          questionId: currentQuestion.id,
+        }));
+      } catch (e) {}
+    }
+    navigate('/competition');
   };
 
   // Briefing Screen
@@ -1505,12 +1527,12 @@ export default function Round1() {
                 <Clock className="w-3.5 h-3.5" /> {formatTime(totalTime)}
               </span>
             </div>
-            <button 
-              onClick={() => setShowQuitModal(true)}
-              className="p-2 border border-red-500/60 text-red-500/70 hover:border-red-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
-              title="Disconnect"
+            <button
+              onClick={handleBack}
+              className="p-2 border border-[#39ff14]/40 text-[#39ff14]/70 hover:border-[#39ff14] hover:text-[#39ff14] hover:bg-[#39ff14]/5 transition-all"
+              title="Back to Lobby"
             >
-              <Power className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1731,57 +1753,6 @@ export default function Round1() {
           </AnimatePresence>
         </div>
       </div>
-
-            {/* Quit Modal */}
-      <AnimatePresence>
-        {showQuitModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.88, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0 }}
-              className="max-w-md w-full border border-red-500/60 bg-[#0a0000]/98 p-10 text-center box-glow-red relative"
-            >
-              <HudCorners size="sm" />
-              <motion.div
-                animate={{ opacity: [1, 0.4, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                <AlertTriangle className="w-14 h-14 mx-auto text-red-500 mb-5" />
-              </motion.div>
-              <h2 className="text-2xl font-black text-red-400 mb-3 tracking-[0.15em] text-glow-red">SEVER CONNECTION?</h2>
-              <p className="text-red-400/60 mb-8 text-sm leading-relaxed tracking-wide">Disconnecting now will finalize your session. Your highest level will be recorded.</p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={async () => {
-                    if (sessionId) {
-                      try { await api.post(`/game/session/${sessionId}/end`); }
-                      catch (err) { console.error('Failed to end session:', err); }
-                    }
-                    setGameOver(true);
-                  }}
-                  className="px-6 py-3 bg-red-950/60 border border-red-500/60 text-red-400 hover:bg-red-500 hover:text-black hover:border-red-500 transition-all uppercase tracking-[0.2em] font-black text-sm"
-                >
-                  [ CONFIRM ]
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setShowQuitModal(false)}
-                  className="px-6 py-3 bg-[#001800] border border-[#39ff14]/40 text-[#39ff14]/80 hover:border-[#39ff14] hover:bg-[#39ff14] hover:text-black transition-all uppercase tracking-[0.2em] font-black text-sm"
-                >
-                  [ STAY IN MISSION ]
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

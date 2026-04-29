@@ -346,14 +346,8 @@ export default function TeamLogin() {
                   </motion.button>
                 </form>
 
-                {/* Admin / status footer */}
-                <div className="mt-5 pt-4 border-t border-[#39ff14]/[0.07] flex items-center justify-between">
-                  <button
-                    onClick={() => navigate('/admin/login')}
-                    className="text-[#c792ea]/50 hover:text-[#c792ea] text-[9px] tracking-[0.2em] transition-colors flex items-center gap-1.5 group"
-                  >
-                    <span className="text-[#c792ea]/60 group-hover:text-[#c792ea]">$</span> admin --elevate
-                  </button>
+                {/* Status footer */}
+                <div className="mt-5 pt-4 border-t border-[#39ff14]/[0.07] flex items-center justify-end">
                   <div className="flex items-center gap-2 text-[8px] text-[#00e5ff]/50 tracking-widest">
                     <span className="w-1.5 h-1.5 bg-[#00e5ff] rounded-full animate-pulse shadow-[0_0_6px_rgba(0,229,255,0.6)]" />
                     ENCRYPTED

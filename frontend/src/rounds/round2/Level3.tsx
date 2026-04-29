@@ -23,8 +23,6 @@ const cppTheme = EditorView.theme({
   '.cm-cursor': { borderLeftColor: '#ff6600 !important', borderLeftWidth: '2px !important' },
 });
 
-const CLIENT_ID = import.meta.env.VITE_JDOODLE_CLIENT_ID as string;
-const CLIENT_SECRET = import.meta.env.VITE_JDOODLE_CLIENT_SECRET as string;
 const CELL = 40;
 
 // Always use backend compile endpoint
@@ -56,43 +54,44 @@ interface Explosion { id: number; x: number; y: number; phase: 'flash' | 'ring' 
 const HIDDEN_HEADER = `#include <iostream>
 #include <string>
 using namespace std;
-class Weapon { public: virtual void fire() = 0; virtual ~Weapon() {} };
-class LaserGun : public Weapon { public: void fire() override { cout << "FIRE:LASER" << endl; } };
-class Cannon : public Weapon { public: void fire() override { cout << "FIRE:CANNON" << endl; } };
 `;
 
 function getCppStarter(): string {
-  return `// ============================================================
-// LEVEL 3: Boss Fight against General Makarov
-// ============================================================
-//
-// DIRECTION CODES (from Radar):
-//   1 = RIGHT   (boss moving right)
-//   2 = DOWN    (boss moving down)
-//   3 = LEFT    (boss moving left -- BOSS FIRES AT YOU!)
-//   4 = UP      (boss moving up)
-//
-// BOSS PATTERN:
-//   - Boss patrols a square: rows 2-5, cols 6-9
-//   - Starts at (row=2, col=6) going RIGHT
-//   - Turns clockwise at corners
-//
-// WEAPONS :
-//   - LaserGun:  cout << "FIRE:LASER"  -- use when boss is SHIELDED
-//   - Cannon:    cout << "FIRE:CANNON" -- use when boss is OPEN
-//
-// SHIELD:
-//   - cout << "SHIELD" -- activate when boss fires at you (dir=LEFT)
-// ============================================================
+  return `/*
+ * LEVEL 3: BOSS FIGHT — DEFEAT MAKAROV
+ *
+ * GOAL: Keep fighting until Makarov is destroyed.
+ *       Your tank starts at (row=0, col=0).
+ *
+ * PROVIDED:
+ *   class Weapon { virtual void fire() = 0; virtual ~Weapon() {} };
+ *   LaserGun and Cannon inherit from Weapon — you must create them.
+ *
+ * BOSS DIRECTION CODES:
+ *   1 = RIGHT,  2 = DOWN,  3 = LEFT,  4 = UP
+ *
+ *   bossDir == 1 (RIGHT): Boss has SHIELD — use LaserGun
+ *   bossDir == 2 (DOWN):  Boss is open    — use Cannon
+ *   bossDir == 3 (LEFT):  Boss FIRES AT YOU — print "SHIELD" to block
+ *   bossDir == 4 (UP):    Boss is open    — use Cannon
+ *
+ * OUTPUT COMMANDS:
+ *   cout << "STEP:" << row << "," << col << endl;
+ *   cout << "SHIELD" << endl;
+ *   weapon->fire();
+ */
 
-// --- [PROVIDED: Radar class - tracks boss position, DO NOT MODIFY] ---
+class Weapon {
+public:
+    virtual void fire() = 0;
+    virtual ~Weapon() {}
+};
+
 class Radar {
 private:
     int bossRow, bossCol, bossDir;
-
 public:
-    Radar() : bossRow(2), bossCol(6), bossDir(1) {}
-
+    Radar() { bossRow = 2; bossCol = 6; bossDir = 1; }
     void moveBoss() {
         if (bossDir == 1) bossCol++;
         if (bossDir == 2) bossRow++;
@@ -103,71 +102,20 @@ public:
         if (bossRow == 5 && bossCol == 6) bossDir = 4;
         if (bossRow == 2 && bossCol == 6) bossDir = 1;
     }
-
     int getBossRow() { return bossRow; }
     int getBossCol() { return bossCol; }
     int getBossDir() { return bossDir; }
 };
 
-// --- [PROVIDED: Weapon base class and subclasses] ---
-class Weapon { public: virtual void fire() = 0; virtual ~Weapon() {} };
-
-
-// ============================================================
 // TODO: Implement MyTank
-// ============================================================
+
 class MyTank {
-private:
-    int row, col;
-    Radar* radar;       // Aggregation: we USE the radar, we don't own it
-    Weapon* weapon;     // Composition: we OWN the weapon, must manage memory
 
-public:
-    MyTank(Radar* r) : row(0), col(0), radar(r), weapon(nullptr) {}
-
-    ~MyTank() {
-        // TODO: Clean up weapon (Composition -- you own it)
-        // Write your logic here
-
-    }
-
-    // Print EACH step: cout << "STEP:" << col << "," << row << endl;
-    // NOTE: This level uses col,row format (not row,col)!
-    void move(int toRow, int toCol) {
-        // Write your logic here
-
-    }
-
-    // TODO: Decide what to do based on boss direction.
-    //
-    // RULES:
-    //   - To shield if bossDir == 3
-    //     Print: cout << "SHIELD" << endl; and RETURN immediately.
-    //   
-    //     If bossDir == 1 (RIGHT): boss is SHIELDED -> use LaserGun
-    //     If bossDir == 2 or 4: boss is OPEN -> use Cannon
-
-    //
-    void attack(int bossDir) {
-        // Write your logic here
-
-    }
 };
 
 int main() {
     Radar radar;
     MyTank tank(&radar);
-
-    while (true) {
-        // 1) Read boss position and direction from radar
-        int bossRow = radar.getBossRow();
-        int bossCol = radar.getBossCol();
-        int bossDir = radar.getBossDir();
-
-        //call your own methods here
-        // 4) Advance boss to next position DONT CHANGE THIS - this simulates the boss moving independently of your code
-        radar.moveBoss();
-    }
 
     return 0;
 }`;
@@ -269,10 +217,7 @@ export default function Level3() {
       const res = await fetch(COMPILE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(import.meta.env.DEV
-          ? { clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, script: HIDDEN_HEADER + code, language: 'cpp17', versionIndex: '0' }
-          : { script: HIDDEN_HEADER + code }
-        ),
+        body: JSON.stringify({ script: HIDDEN_HEADER + code }),
       });
       const data = await res.json();
 
@@ -298,6 +243,79 @@ export default function Level3() {
       let bossShouldFire = false; // boss fires independently when facing LEFT and player in same row
       let bossFacingLeft = false;
       let bossShielded = true;
+      let turnAdvanced = false; // tracks whether the current turn has been advanced by a STEP
+
+      // Helper: advance the boss to the next patrol position
+      const advanceBoss = async () => {
+        // If boss was waiting to fire from previous turn and player did nothing, boss fires now
+        if (bossShouldFire) {
+          pHp--;
+          const hitProjId = ++projectileIdRef.current;
+          setProjectiles(prev => [...prev, { id: hitProjId, fromX: curMkvX, fromY: curMkvY, toX: curTankX, toY: curTankY, type: 'BOSS', fired: false }]);
+          await sleep(50);
+          setProjectiles(prev => prev.map(p => p.id === hitProjId ? { ...p, fired: true } : p));
+          await sleep(300);
+          setProjectiles(prev => prev.filter(p => p.id !== hitProjId));
+          spawnExplosion(curTankX, curTankY);
+          setPlayerHp(pHp);
+          setTerminalLines(prev => [...prev, `>> HIT BY MAKAROV! You didn't shield. Player HP: ${pHp}/${PLAYER_MAX_HP}`]);
+          bossShouldFire = false;
+          if (pHp <= 0) return;
+          await sleep(200);
+        }
+
+        // Increment turn and move boss to next position
+        curTurn++;
+        const pathIdx = curTurn % BOSS_PATH.length;
+        const newMkvX = BOSS_PATH[pathIdx][0];
+        const newMkvY = BOSS_PATH[pathIdx][1];
+        const facing = BOSS_FACING[pathIdx];
+        bossShielded = (facing === 'right');
+        bossFacingLeft = facing === 'left';
+
+        setMakarovState(prev => ({ ...prev, facing, shielded: bossShielded, x: bossAnimRef.current.x, y: bossAnimRef.current.y }));
+
+        // Animate boss cell-by-cell
+        const startX = bossAnimRef.current.x;
+        const startY = bossAnimRef.current.y;
+        const dx = Math.sign(newMkvX - startX);
+        const dy = Math.sign(newMkvY - startY);
+
+        if (dx !== 0) {
+          let ax = startX;
+          while (ax !== newMkvX) {
+            if (abortRef.current) return;
+            ax += dx;
+            bossAnimRef.current = { x: ax, y: startY };
+            setMakarovState(prev => ({ ...prev, x: ax, y: startY }));
+            await sleep(160);
+          }
+        }
+        if (dy !== 0) {
+          let ay = startY;
+          while (ay !== newMkvY) {
+            if (abortRef.current) return;
+            ay += dy;
+            bossAnimRef.current = { x: newMkvX, y: ay };
+            setMakarovState(prev => ({ ...prev, x: newMkvX, y: ay }));
+            await sleep(160);
+          }
+        }
+
+        bossAnimRef.current = { x: newMkvX, y: newMkvY };
+        curMkvX = newMkvX;
+        curMkvY = newMkvY;
+        setCurrentTurn(curTurn);
+
+        // Boss fires independently: facing LEFT + player in same row
+        bossShouldFire = bossFacingLeft && curTankY === curMkvY;
+
+        const inFireRow = bossShouldFire;
+        const shieldTag = bossShielded ? ' [SHIELD ACTIVE — use LASER]' : ' [NO SHIELD — use CANNON]';
+        const threatTag = inFireRow ? ' [BOSS FACING LEFT — WILL FIRE AT YOU!]' : bossFacingLeft ? ' [BOSS FACING LEFT — not in same row]' : shieldTag;
+        setTerminalLines(prev => [...prev, `>> --- TURN ${curTurn} --- Boss at (${curMkvX},${curMkvY}) facing ${facing.toUpperCase()}${threatTag}`]);
+        await sleep(80);
+      };
 
       const processNext = async () => {
         while (i < lines.length) {
@@ -308,91 +326,37 @@ export default function Level3() {
           if (!line) continue;
 
           if (line.startsWith('STEP:')) {
-            // If boss was waiting to fire from previous turn and player did nothing, boss fires now
-            if (bossShouldFire) {
-              pHp--;
-              const hitProjId = ++projectileIdRef.current;
-              setProjectiles(prev => [...prev, { id: hitProjId, fromX: curMkvX, fromY: curMkvY, toX: curTankX, toY: curTankY, type: 'BOSS', fired: false }]);
-              await sleep(50);
-              setProjectiles(prev => prev.map(p => p.id === hitProjId ? { ...p, fired: true } : p));
-              await sleep(300);
-              setProjectiles(prev => prev.filter(p => p.id !== hitProjId));
-              spawnExplosion(curTankX, curTankY);
-              setPlayerHp(pHp);
-              setTerminalLines(prev => [...prev, `>> HIT BY MAKAROV! You didn't shield. Player HP: ${pHp}/${PLAYER_MAX_HP}`]);
-              bossShouldFire = false;
-              if (pHp <= 0) break;
-              await sleep(200);
-            }
+            // Advance boss to next position (includes pending boss fire check)
+            await advanceBoss();
+            if (pHp <= 0) break;
+            turnAdvanced = true;
 
             // Move player tank
             const parts = line.split(':')[1].split(',').map(Number);
-            const rawX = parts[0];
-            const rawY = parts[1];
+            const rawRow = parts[0];
+            const rawCol = parts[1];
 
-            if (rawX < 0 || rawX > 9 || rawY < 0 || rawY > 9) {
-              setTerminalLines(prev => [...prev, `>> BOUNDS ERROR: Tank cannot leave the arena (tried C${rawX} R${rawY})`]);
+            if (rawCol < 0 || rawCol > 9 || rawRow < 0 || rawRow > 9) {
+              setTerminalLines(prev => [...prev, `>> BOUNDS ERROR: Tank cannot leave the arena (tried C${rawCol} R${rawRow})`]);
               setResultStatus('failure'); setCompiling(false); return;
             }
 
-            curTankX = rawX;
-            curTankY = rawY;
+            curTankX = rawCol;
+            curTankY = rawRow;
             setTankPos({ x: curTankX, y: curTankY });
             await sleep(200);
 
-            // Auto-increment turn and move boss to next position
-            curTurn++;
-            const pathIdx = curTurn % BOSS_PATH.length;
-            const newMkvX = BOSS_PATH[pathIdx][0];
-            const newMkvY = BOSS_PATH[pathIdx][1];
-            const facing = BOSS_FACING[pathIdx];
-            bossShielded = (facing === 'right');
-            bossFacingLeft = facing === 'left';
-
-            setMakarovState(prev => ({ ...prev, facing, shielded: bossShielded, x: bossAnimRef.current.x, y: bossAnimRef.current.y }));
-
-            // Animate boss cell-by-cell
-            const startX = bossAnimRef.current.x;
-            const startY = bossAnimRef.current.y;
-            const dx = Math.sign(newMkvX - startX);
-            const dy = Math.sign(newMkvY - startY);
-
-            if (dx !== 0) {
-              let ax = startX;
-              while (ax !== newMkvX) {
-                if (abortRef.current) return;
-                ax += dx;
-                bossAnimRef.current = { x: ax, y: startY };
-                setMakarovState(prev => ({ ...prev, x: ax, y: startY }));
-                await sleep(160);
-              }
-            }
-            if (dy !== 0) {
-              let ay = startY;
-              while (ay !== newMkvY) {
-                if (abortRef.current) return;
-                ay += dy;
-                bossAnimRef.current = { x: newMkvX, y: ay };
-                setMakarovState(prev => ({ ...prev, x: newMkvX, y: ay }));
-                await sleep(160);
-              }
-            }
-
-            bossAnimRef.current = { x: newMkvX, y: newMkvY };
-            curMkvX = newMkvX;
-            curMkvY = newMkvY;
-            setCurrentTurn(curTurn);
-
-            // Boss fires independently: facing LEFT + player in same row
+            // Re-check if boss should fire at player's NEW position
             bossShouldFire = bossFacingLeft && curTankY === curMkvY;
 
-            const inFireRow = bossShouldFire;
-            const shieldTag = bossShielded ? ' [SHIELD ACTIVE — use LASER]' : ' [NO SHIELD — use CANNON]';
-            const threatTag = inFireRow ? ' [BOSS FACING LEFT — WILL FIRE AT YOU!]' : bossFacingLeft ? ' [BOSS FACING LEFT — not in same row]' : shieldTag;
-            setTerminalLines(prev => [...prev, `>> --- TURN ${curTurn} --- Boss at (${curMkvX},${curMkvY}) facing ${facing.toUpperCase()}${threatTag}`]);
-            await sleep(80);
-
           } else if (line === 'SHIELD') {
+            // If no STEP was output this turn, advance boss first
+            if (!turnAdvanced) {
+              await advanceBoss();
+              if (pHp <= 0) break;
+            }
+            turnAdvanced = false;
+
             if (bossShouldFire) {
               // Boss fires — player shields! Blocked!
               bossShouldFire = false;
@@ -417,6 +381,13 @@ export default function Level3() {
             await sleep(150);
 
           } else if (line.startsWith('FIRE:')) {
+            // If no STEP was output this turn, advance boss first
+            if (!turnAdvanced) {
+              await advanceBoss();
+              if (pHp <= 0) break;
+            }
+            turnAdvanced = false;
+
             const rawType = line.split(':')[1].trim();
             if (rawType !== 'LASER' && rawType !== 'CANNON') {
               setTerminalLines(prev => [...prev, `>> [TURN ${curTurn}] FIRE_ERROR: Unknown weapon '${rawType}'.`]);
@@ -644,7 +615,7 @@ export default function Level3() {
               <div className="text-[#6699ff] font-bold mt-1 mb-0.5">Destructor:</div>
               <div className="text-[#6699ff] pl-3">Deletes the weapon pointer because your tank OWNS the weapon (Composition).</div>
               <div className="text-[#6699ff] font-bold mt-1 mb-0.5">move method:</div>
-              <div className="text-[#6699ff] pl-3">Takes a target row and target column. Uses while loops to increment or decrement row and col one cell at a time. Row++ means down, row-- means up, col++ means right, col-- means left. After reaching target, prints STEP followed by column and row.</div>
+              <div className="text-[#6699ff] pl-3">Takes a target row and target column. Uses while loops to increment or decrement row and col one cell at a time. Row++ means down, row-- means up, col++ means right, col-- means left. After reaching target, prints STEP followed by row and column.</div>
               <div className="text-[#6699ff] font-bold mt-1 mb-0.5">attack method:</div>
               <div className="text-[#6699ff] pl-3">Takes boss direction. If direction is 3 (LEFT), boss is firing at you — print SHIELD and return. Otherwise delete old weapon, set to null. If direction is 1 (RIGHT), create new LaserGun (boss shielded). If direction is 2 or 4 (UP/DOWN), create new Cannon (boss open). Then call fire on the weapon pointer — Polymorphism in action.</div>
             </div>

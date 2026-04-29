@@ -23,8 +23,6 @@ const cppTheme = EditorView.theme({
   '.cm-cursor': { borderLeftColor: '#39ff14 !important', borderLeftWidth: '2px !important' },
 });
 
-const CLIENT_ID = import.meta.env.VITE_JDOODLE_CLIENT_ID as string;
-const CLIENT_SECRET = import.meta.env.VITE_JDOODLE_CLIENT_SECRET as string;
 const CELL = 40;
 
 // Always use backend compile endpoint
@@ -46,12 +44,26 @@ function makeCheckpoints(): Checkpoint[] {
 
 function buildStarterCode(cps: Checkpoint[]): string {
   const pathArr = cps.map(cp => `{${cp.y}, ${cp.x}}`).join(', ');
-  return `#include <iostream>
+  return `/*
+ * LEVEL 1: CHECKPOINT RUN
+ *
+ * GOAL: Visit all 9 checkpoints in order, then reach Column 9 to finish.
+ *
+ * PROVIDED: class Tank with pure virtual methods move(), attack(), defend()
+ *
+ * YOUR TASK: Inherit from Tank into MyTank, override all three methods.
+ *
+ * TIP: Hover over each checkpoint on the grid to see its (row, col).
+ *
+ * MOVEMENT:  r++ = down,  r-- = up,  c++ = right,  c-- = left
+ * OUTPUT:    cout << "STEP:" << r << "," << c << endl;
+ * CHECKPOINT: cout << "NODE_" << (i+1) << "_SECURED" << endl;
+ * FINISH:    cout << "FINISH_REACHED" << endl;
+ */
+
+#include <iostream>
 using namespace std;
 
-// === BASE CLASS (provided) ===
-// Tank is an abstract class with pure virtual functions.
-// You MUST override move(), attack(), and defend() in MyTank.
 class Tank {
 public:
     virtual void move() = 0;
@@ -59,32 +71,13 @@ public:
     virtual void defend() = 0;
 };
 
-// === YOUR CLASS ===
-// Inherit from Tank and override move() to navigate through checkpoints.
 class MyTank : public Tank {
 private:
-    int r = 0;  // current row position
-    int c = 0;  // current column position
-
-    // 9 checkpoints to visit IN ORDER {row, col}
-    // Row = vertical (0=top, 9=bottom), Col = horizontal (0=left, 9=right)
-    //if you hover over the checkpoint numbers on the grid, you can see their coordinates;
+    int r = 0, c = 0;
 
 public:
-    // TODO: Override move() to visit all 9 checkpoints in order and reach the finishing col.
-    //
-    // HOW TO MOVE:
-    //   - Update r and c one step at a time toward the target
-    //   - Print EACH step:  cout << "STEP:" << r << "," << c << endl;
-    //   - After reaching a checkpoint, print:  cout << "NODE_X_SECURED" << endl;
-    //     (where X is the checkpoint number 1-9)
-    //
-    // FINAL OBJECTIVE:
-    //   - After all 9 checkpoints, move to column 9 (finish zone)
-    //   - Print: cout << "FINISH_REACHED" << endl;
     void move() override {
-        // Write your logic here
-
+        // TODO: Visit each checkpoint in order, then reach column 9
     }
     void attack() override {}
     void defend() override {}
@@ -166,10 +159,7 @@ export default function Round2() {
       const res = await fetch(COMPILE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(import.meta.env.DEV
-          ? { clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, script: code, language: 'cpp17', versionIndex: '0' }
-          : { script: code }
-        ),
+        body: JSON.stringify({ script: code }),
       });
       const data = await res.json();
 

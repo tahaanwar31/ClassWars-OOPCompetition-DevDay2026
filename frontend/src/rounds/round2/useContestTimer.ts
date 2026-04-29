@@ -12,8 +12,16 @@ export function useContestTimer(roundKey: string) {
     const fetchConfig = async () => {
       try {
         const res = await api.get(`/game/config/round/${roundKey}`);
-        if (res.data.playWindowEnd) {
-          const endMs = new Date(res.data.playWindowEnd).getTime();
+        let endStr = res.data.playWindowEnd;
+        // If round2 has no window, inherit round1's
+        if (!endStr && roundKey === 'round2') {
+          try {
+            const r1 = await api.get('/game/config/round/round1');
+            endStr = r1.data.playWindowEnd;
+          } catch (e) {}
+        }
+        if (endStr) {
+          const endMs = new Date(endStr).getTime();
           if (endMs > Date.now()) {
             setContestEndMs(endMs);
           } else {
@@ -48,7 +56,7 @@ export function useContestTimer(roundKey: string) {
   useEffect(() => {
     if (contestEnded) {
       const timeout = setTimeout(() => {
-        navigate('/competition/round2');
+        navigate('/competition');
       }, 3000);
       return () => clearTimeout(timeout);
     }

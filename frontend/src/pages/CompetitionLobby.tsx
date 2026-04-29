@@ -198,6 +198,16 @@ export default function CompetitionLobby() {
             const accentRgb = isR2 ? '255,0,60' : '57,255,20';
             const numeral = index === 0 ? '01' : '02';
 
+            // Round 2 inherits Round 1's time window if not set
+            const round1 = competitionData.rounds.find(r => r.roundKey === 'round1');
+            if (isR2 && !round.playWindowEnd && round1?.playWindowEnd) {
+              round = {
+                ...round,
+                playWindowEnd: round.playWindowEnd || round1.playWindowEnd,
+                playWindowStart: round.playWindowStart || round1.playWindowStart,
+              };
+            }
+
             return (
               <motion.div
                 key={round.roundKey}
