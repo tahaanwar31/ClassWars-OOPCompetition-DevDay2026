@@ -68,22 +68,16 @@ private:
 
     // 9 checkpoints to visit IN ORDER {row, col}
     // Row = vertical (0=top, 9=bottom), Col = horizontal (0=left, 9=right)
-    int path[9][2] = {${pathArr}};
+    //if you hover over the checkpoint numbers on the grid, you can see their coordinates;
 
 public:
-    // TODO: Override move() to visit all 9 checkpoints in order.
+    // TODO: Override move() to visit all 9 checkpoints in order and reach the finishing col.
     //
     // HOW TO MOVE:
     //   - Update r and c one step at a time toward the target
     //   - Print EACH step:  cout << "STEP:" << r << "," << c << endl;
     //   - After reaching a checkpoint, print:  cout << "NODE_X_SECURED" << endl;
     //     (where X is the checkpoint number 1-9)
-    //
-    // HOW NAVIGATION WORKS:
-    //   - path[0] is checkpoint 1, path[8] is checkpoint 9
-    //   - path[i][0] = target row, path[i][1] = target col
-    //   - Move row: if r < target row, r++; if r > target row, r--
-    //   - Move col: if c < target col, c++; if c > target col, c--
     //
     // FINAL OBJECTIVE:
     //   - After all 9 checkpoints, move to column 9 (finish zone)

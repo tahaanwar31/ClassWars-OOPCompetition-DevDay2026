@@ -65,11 +65,6 @@ function getCppStarter(): string {
   return `// ============================================================
 // LEVEL 3: Boss Fight against General Makarov
 // ============================================================
-// OOP CONCEPTS TESTED:
-//   - Aggregation: MyTank uses Radar* but does NOT own it
-//   - Composition: MyTank owns Weapon* and must delete it
-//   - Polymorphism: Weapon* points to LaserGun or Cannon,
-//     calling fire() invokes the correct override
 //
 // DIRECTION CODES (from Radar):
 //   1 = RIGHT   (boss moving right)
@@ -82,7 +77,7 @@ function getCppStarter(): string {
 //   - Starts at (row=2, col=6) going RIGHT
 //   - Turns clockwise at corners
 //
-// WEAPONS (provided):
+// WEAPONS :
 //   - LaserGun:  cout << "FIRE:LASER"  -- use when boss is SHIELDED
 //   - Cannon:    cout << "FIRE:CANNON" -- use when boss is OPEN
 //
@@ -116,8 +111,7 @@ public:
 
 // --- [PROVIDED: Weapon base class and subclasses] ---
 class Weapon { public: virtual void fire() = 0; virtual ~Weapon() {} };
-class LaserGun : public Weapon { public: void fire() override { cout << "FIRE:LASER" << endl; } };
-class Cannon : public Weapon { public: void fire() override { cout << "FIRE:CANNON" << endl; } };
+
 
 // ============================================================
 // TODO: Implement MyTank
@@ -137,13 +131,8 @@ public:
 
     }
 
-    // TODO: Move tank to (toRow, toCol), one cell at a time.
     // Print EACH step: cout << "STEP:" << col << "," << row << endl;
     // NOTE: This level uses col,row format (not row,col)!
-    //   - row < toRow: row++ (move down)
-    //   - row > toRow: row-- (move up)
-    //   - col < toCol: col++ (move right)
-    //   - col > toCol: col-- (move left)
     void move(int toRow, int toCol) {
         // Write your logic here
 
@@ -152,14 +141,12 @@ public:
     // TODO: Decide what to do based on boss direction.
     //
     // RULES:
-    //   - If bossDir == 3 (LEFT): Boss is FIRING at you!
+    //   - To shield if bossDir == 3
     //     Print: cout << "SHIELD" << endl; and RETURN immediately.
-    //
-    //   - Otherwise, pick the right weapon (Composition pattern):
-    //     1) Delete old weapon: delete weapon; weapon = nullptr;
-    //     2) If bossDir == 1 (RIGHT): boss is SHIELDED -> use LaserGun
-    //     3) If bossDir == 2 or 4: boss is OPEN -> use Cannon
-    //     4) Call weapon->fire() (Polymorphism!)
+    //   
+    //     If bossDir == 1 (RIGHT): boss is SHIELDED -> use LaserGun
+    //     If bossDir == 2 or 4: boss is OPEN -> use Cannon
+
     //
     void attack(int bossDir) {
         // Write your logic here
@@ -177,13 +164,8 @@ int main() {
         int bossCol = radar.getBossCol();
         int bossDir = radar.getBossDir();
 
-        // 2) Move tank to 3 cells LEFT of boss, same row
-        tank.move(bossRow, bossCol - 3);
-
-        // 3) Attack or shield based on boss direction
-        tank.attack(bossDir);
-
-        // 4) Advance boss to next position
+        //call your own methods here
+        // 4) Advance boss to next position DONT CHANGE THIS - this simulates the boss moving independently of your code
         radar.moveBoss();
     }
 

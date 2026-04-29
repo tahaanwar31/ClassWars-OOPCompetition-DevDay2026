@@ -83,19 +83,16 @@ private:
     int currentTarget = 0;      // which target we're going after
 
     // 8 enemy targets {row, col} - destroy ALL of them
-    int targets[8][2] = {${targetsArr}};
+    //You will get coordinates of the targets once you hover above them
 
 public:
     // TODO: Override move() to reach the firing position.
     //
     // FIRING RULE: You must be exactly 2 cells to the LEFT of the target.
-    //   lock position = (targetRow, targetCol - 2)
     //
     // HOW TO MOVE:
     //   - Move one cell at a time toward the lock position
     //   - Print EACH step:  cout << "STEP:" << r << "," << c << endl;
-    //   - Move row: if r < target, r++; if r > target, r--
-    //   - Move col: if c < target, c++; if c > target, c--
     //
     void move() override {
         // Write your logic here
