@@ -207,7 +207,10 @@ export class GameService {
     }
     
     team.sessionIds.push((session as any)._id.toString());
-    
+
+    // Mongoose doesn't track changes to Mixed (Object) type nested properties
+    team.markModified('roundStats');
+
     await team.save();
   }
 

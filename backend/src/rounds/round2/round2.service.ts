@@ -62,6 +62,9 @@ export class Round2Service {
       team.totalScore += points;
       team.bestScore = Math.max(team.bestScore, session.totalPoints);
 
+      // Mongoose doesn't track changes to Mixed (Object) type nested properties
+      team.markModified('roundStats');
+
       await team.save();
     }
 
