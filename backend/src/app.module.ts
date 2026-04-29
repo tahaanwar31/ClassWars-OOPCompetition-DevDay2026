@@ -20,6 +20,15 @@ import { Round2Module } from './rounds/round2/round2.module';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', '..', 'frontend', 'dist'),
       exclude: ['/api/(.*)'],
+      serveStaticOptions: {
+        setHeaders: (res: any, path: string) => {
+          if (path.endsWith('.html') || path === '/') {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          }
+        },
+      },
     }),
     AuthModule,
     QuestionsModule,
