@@ -230,13 +230,15 @@ export default function Round2() {
             if (m) {
               const nodeIdx = parseInt(m[1]) - 1;
               securedNodes.push(nodeIdx);
-              // Register checkpoint hit from code output (handles case where tank
-              // starts on a checkpoint and no STEP line is generated for it)
-              if (!hitSet.has(nodeIdx)) {
-                hitSet.add(nodeIdx);
-                const idx = nodeIdx;
-                setCheckpoints(prev => prev.map((cp, j) => j === idx ? { ...cp, hit: true } : cp));
-                setTerminalLines(prev => [...prev, `>> Checkpoint ${idx + 1} crossed`]);
+              // Only register checkpoint hit if tank is actually at the correct position
+              if (!hitSet.has(nodeIdx) && nodeIdx < snapCps.length) {
+                const cp = snapCps[nodeIdx];
+                if (col === cp.x && row === cp.y) {
+                  hitSet.add(nodeIdx);
+                  const idx = nodeIdx;
+                  setCheckpoints(prev => prev.map((cp, j) => j === idx ? { ...cp, hit: true } : cp));
+                  setTerminalLines(prev => [...prev, `>> Checkpoint ${idx + 1} crossed`]);
+                }
               }
             } else if (line === 'FINISH_REACHED') {
               finishReached = true;
