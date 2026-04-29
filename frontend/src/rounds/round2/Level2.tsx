@@ -29,7 +29,7 @@ const CELL = 40;
 
 const COMPILE_URL = import.meta.env.DEV
   ? `https://corsproxy.io/?https://api.jdoodle.com/v1/execute`
-  : '/api/compile';
+  : '/compile';
 
 interface Enemy {
   x: number;

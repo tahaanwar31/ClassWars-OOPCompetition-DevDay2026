@@ -30,7 +30,7 @@ const CELL = 40;
 // Use backend compile endpoint in production, JDoodle directly in dev
 const COMPILE_URL = import.meta.env.DEV
   ? `https://corsproxy.io/?https://api.jdoodle.com/v1/execute`
-  : '/api/compile';
+  : '/compile';
 
 interface Checkpoint {
   x: number;
