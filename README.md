@@ -205,7 +205,7 @@ cd frontend && npm run dev
 
 Built for **Developers Day 2026**, organized by the **ACM NUCES Student Chapter** at **FAST NUCES Karachi** on **April 30, 2026**. The platform was designed, developed, and deployed to host a live OOP coding competition featuring 10 levels of OOP trivia and a unique 3-level C++ tank warfare challenge testing inheritance, polymorphism, abstraction, composition, and memory management.
 
-**~30 teams** of 3 members each participated from universities across Karachi including **FAST NUCES**, **NED University**, **IOBM**, and **Bahria University**. The event was a resounding success.
+**~40+ teams** of 3 members each participated from universities across Karachi including **FAST NUCES**, **NED University**, **IOBM**, and **Bahria University**. The event was a resounding success.
 
 ---
 
