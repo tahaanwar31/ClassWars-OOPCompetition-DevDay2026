@@ -19,7 +19,7 @@
 
 ## At a Glance
 
-Class Wars is a **two-round competitive programming and strategy platform** built for a live university coding competition. Teams compete across a multi-level MCQ trivia round and a unique **Tank Warfare** coding challenge where players write C++ AI code to control virtual tanks in real-time browser combat. The platform features a full admin dashboard, real-time leaderboards, time-based round access, and server-side C++ compilation — all designed and deployed within a tight competition timeline.
+Class Wars is a **two-round competitive programming and strategy platform** built for a live university coding competition. Teams compete through a multi-level trivia round covering OOP, data structures, and algorithms, followed by a unique **Tank Warfare** coding challenge where players write C++ code to navigate, fight, and defeat a boss — all compiled server-side in real time. The platform features a full admin dashboard, combined leaderboards, time-based round access, and server-side C++ compilation via the OneCompiler API — all designed and deployed within a tight competition timeline.
 
 > **Live Deployment:** [classwars-45c006aaf281.herokuapp.com](https://classwars-45c006aaf281.herokuapp.com/)
 
@@ -28,27 +28,29 @@ Class Wars is a **two-round competitive programming and strategy platform** buil
 ## Key Features
 
 ### Competition Engine
-- **Two-round format** — Round 1 (MCQ Trivia) + Round 2 (Tank Warfare Coding Challenge)
+- **Two-round format** — Round 1 (Trivia Gauntlet) + Round 2 (Tank Warfare Coding Challenge)
 - **Time-based access control** — Countdown timers and configurable play windows restrict when each round goes live
 - **Real-time combined leaderboard** — Merges scores from both rounds into unified team rankings
 - **Team-based authentication** — Teams register and compete as units, not individuals
 
-### Round 1: Multi-Level MCQ Trivia
-- **10 progressive difficulty levels** with 50 questions each (500 total)
-- **7 question types** — One-word answers, code output prediction, error detection, MCQ, code completion, system design, and more
-- **Adaptive scoring** — Points scale with difficulty; streak bonuses reward consistency
+### Round 1: Trivia Gauntlet
+- **10 progressive difficulty levels** with 50 questions per level (500 total)
+- **3 question types:**
+  - **MCQ** — Multiple choice with 4 options
+  - **One-Word** — Free-text single-word answers (case-insensitive matching)
+  - **Output Prediction** — Predict the output of a given code snippet
+- **Level-up rule:** Clear Level N by answering N questions correctly (Level 1 = 1 correct, Level 2 = 2 correct, ... Level 10 = 10 correct)
+- **Demotion mechanic:** 2 consecutive wrong answers or timeouts drops you back one level — stay sharp
+- **Scoring:** 5 points per correct answer; rankings determined by highest level reached, then speed of progression
 
 ### Round 2: Tank Warfare (The Signature Feature)
-- Players write **real C++ code** (`class MyTank : public Tank`) with `move()`, `attack()`, and `defend()` method overrides
-- Code is **compiled and executed server-side** via the Piston API, then parsed for behavioral profiling
-- A **canvas-based game engine** renders tank combat in the browser using `requestAnimationFrame`
-- **4 progressive levels:**
-  - **Level 1** — Program movement to navigate checkpoints
-  - **Level 2** — Add targeting logic to destroy moving enemies
-  - **Level 3** — Implement shield defense to block incoming projectiles
-  - **Level 4** — Full boss battle against MAKAROV (100 HP boss with shields and continuous fire)
-- **Behavioral profiling system** — C++ test harness outputs `PROFILE:move:fire:shield` strategy lines that drive client-side tank AI
-- **Smart scoring** — Base points + HP bonus + time bonus per level (max 200 pts/level, 800 total)
+- Players write **real C++ code** using OOP concepts — classes, inheritance, polymorphism, abstraction, composition, and memory management
+- Code is **compiled and executed server-side** via the OneCompiler API, then the output drives the game
+- **3 progressive levels testing different OOP concepts:**
+  - **Level 1 — Checkpoint Run (Inheritance):** Navigate a tank through 9 checkpoints in sequence on a 10x10 grid. Override `move()`, `attack()`, and `defend()` from a `Tank` base class. Print `STEP:<row>,<col>` commands to move the tank cell-by-cell
+  - **Level 2 — Combat Purge (Inheritance + Game Loop):** Destroy 8 enemy tanks on a 10x10 grid. Use a built-in `fire(row, col)` function with strict 2-cell lock range — must be on the same row, exactly 2 cells to the left of the target. Combines movement logic with tactical positioning
+  - **Level 3 — Operation Square One (Boss Fight):** Defeat General Makarov (10 HP) who patrols a square perimeter. The player has only 2 HP. Tests **abstraction** (`Weapon` base class), **polymorphism** (`LaserGun` vs `Cannon` — laser penetrates shields, cannon deals damage to unshielded boss), **aggregation** (`Radar*` pointer), **composition** (owning and deleting `Weapon*`), and **memory management** (`new`/`delete` lifecycle)
+- **Scoring:** 10 points per level completed (30 max for Round 2)
 
 ### Admin Dashboard
 - **Real-time competition statistics** — Active sessions, completion rates, top performers, average scores
@@ -74,7 +76,7 @@ Class Wars is a **two-round competitive programming and strategy platform** buil
 | **Backend** | NestJS + TypeScript | REST API with modular architecture |
 | **Database** | MongoDB + Mongoose | Document storage for sessions, teams, questions |
 | **Auth** | Passport.js + JWT | Team and admin authentication with protected routes |
-| **Code Execution** | Piston API (`emkc.org`) | Server-side C++ compilation and sandboxed execution |
+| **Code Execution** | OneCompiler API (RapidAPI) | Server-side C++ compilation and sandboxed execution |
 | **Hosting** | Heroku | Cloud deployment with MongoDB Atlas |
 
 ---
@@ -89,15 +91,15 @@ classwars/
 │       ├── admin/              # Admin dashboard controllers & services
 │       ├── teams/              # Team CRUD, login, leaderboard queries
 │       ├── questions/          # Question bank management
-│       ├── compile/            # C++ compilation via Piston API + profiling
-│       ├── rounds/round1/      # MCQ session & scoring engine
-│       ├── rounds/round2/      # Tank warfare session, scoring, test harness
+│       ├── compile/            # C++ compilation via OneCompiler API
+│       ├── rounds/round1/      # Trivia session & scoring engine
+│       ├── rounds/round2/      # Tank warfare session & scoring
 │       ├── schemas/            # Mongoose schemas (team, session, config, question)
 │       └── scripts/            # Database seeding & admin setup
 ├── frontend/                   # React SPA
 │   └── src/
 │       ├── pages/              # Login, Lobby, Admin (Dashboard, Leaderboard, etc.)
-│       ├── rounds/round1/      # MCQ gameplay UI
+│       ├── rounds/round1/      # Trivia gameplay UI
 │       ├── rounds/round2/      # Tank warfare game + C++ editor + canvas engine
 │       ├── api/                # Axios instance with auth interceptors
 │       └── components/         # Shared UI components
@@ -111,47 +113,56 @@ classwars/
 This is the standout feature of Class Wars. Here's the full pipeline:
 
 ```
-Player writes C++ code
+Player writes C++ code (class MyTank, LaserGun, Cannon, etc.)
         │
         ▼
-Code sent to backend ──► Wrapped in test harness ──► Compiled via Piston API
+Code sent to backend ──► Prepended with game harness ──► Compiled via OneCompiler API
         │
         ▼
-Test harness runs scenarios per level
+Compiler returns stdout (STEP, FIRE, SHIELD, FINISH_REACHED commands)
         │
         ▼
-Output: LEVEL1:S80:up ──► Parsed into behavioral profile
-        LEVEL1:S20:down
-        PROFILE:track:align:smart
+Frontend parses output line-by-line ──► Animates tank on 10x10 grid
         │
         ▼
-Profile drives client-side tank AI
+Win/loss determined client-side (checkpoints visited, enemies destroyed, boss HP)
         │
         ▼
-Canvas game loop renders combat via requestAnimationFrame
+Score reported to backend on level completion
 ```
 
-**Behavioral Profile Format:** `PROFILE:<move>:<fire>:<shield>`
+### Level 3: Boss Fight in Detail
 
-| Action | Options | Effect |
-|--------|---------|--------|
-| Move | `track`, `up`, `down`, `idle` | Tank movement pattern |
-| Fire | `align`, `always`, `none` | Firing trigger logic |
-| Shield | `smart`, `none` | Auto-shield on incoming projectiles |
+The most technically demanding level tests five OOP concepts simultaneously:
+
+| OOP Concept | How It's Tested |
+|-------------|----------------|
+| **Inheritance** | `MyTank : public Tank` with pure virtual overrides |
+| **Abstraction** | `Weapon` abstract base class with virtual `fire()` |
+| **Polymorphism** | `LaserGun::fire()` prints `FIRE:LASER`, `Cannon::fire()` prints `FIRE:CANNON` |
+| **Aggregation** | `Radar*` pointer — used but not owned/deleted |
+| **Composition + Memory Management** | `Weapon*` — allocated with `new`, must be `delete`d each turn |
+
+The boss patrols a square path and cycles through 4 states:
+- **Facing right (shielded):** Only `LASER` penetrates — `CANNON` deals 0 damage
+- **Facing down (open):** `CANNON` deals 1 HP damage
+- **Facing left (fires at player):** Player must print `SHIELD` or take 1 HP damage
+- **Facing up (open):** `CANNON` deals 1 HP damage
 
 ---
 
 ## Scoring System
 
-### Round 2 — Tank Warfare (per level)
+### Round 1 — Trivia Gauntlet
+- **5 points** per correct answer
+- **Rankings by:** Highest level reached (primary) > Speed of progression (tiebreak)
 
-| Component | Max Points | Calculation |
-|-----------|-----------|-------------|
-| Base Score | 100 | Awarded on level completion |
-| HP Bonus | 50 | `floor(hpRemaining / 100 * 50)` |
-| Time Bonus | 50 | `max(0, 50 - floor(seconds / 10))` |
-| **Total per level** | **200** | |
-| **Round 2 Total** | **800** | 4 levels x 200 max |
+### Round 2 — Tank Warfare
+- **10 points** per level completed
+- **Max Round 2 score:** 30 points (3 levels)
+
+### Combined Leaderboard
+Merges Round 1 and Round 2 scores into unified team rankings.
 
 ---
 
@@ -160,6 +171,7 @@ Canvas game loop renders combat via requestAnimationFrame
 ### Prerequisites
 - Node.js 20+
 - MongoDB (local or Atlas)
+- OneCompiler RapidAPI key (for C++ compilation)
 
 ### Installation
 
@@ -172,8 +184,10 @@ cd ClassWars
 npm run build
 
 # Set up environment variables (backend)
-cp backend/.env.example backend/.env
-# Configure MongoDB URI and JWT secret in .env
+# Create backend/.env with:
+#   MONGODB_URI=mongodb://localhost:27017/classwars
+#   JWT_SECRET=your-secret-key
+#   ONECOMPILER_RAPIDAPI_KEY=your-rapidapi-key
 
 # Seed the database
 cd backend
@@ -192,7 +206,7 @@ cd frontend && npm run dev
 
 ## About
 
-Built for **Developers Day 2026**, organized by the **ACM NUCES Student Chapter** at **FAST NUCES Karachi** on **April 30, 2026**. The platform was designed, developed, and deployed to host a live multi-team coding competition featuring 10 levels of trivia and a unique C++ tank warfare challenge.
+Built for **Developers Day 2026**, organized by the **ACM NUCES Student Chapter** at **FAST NUCES Karachi** on **April 30, 2026**. The platform was designed, developed, and deployed to host a live multi-team coding competition featuring 10 levels of OOP and data structures trivia and a unique 3-level C++ tank warfare challenge testing inheritance, polymorphism, abstraction, composition, and memory management.
 
 ---
 
